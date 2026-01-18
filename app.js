@@ -144,15 +144,53 @@ const ENCOURAGING = [
   'Bien essayé !',
   'Continue, tu progresses !',
   'Super effort !',
-  'Tu vas y arriver !'
+  'Tu vas y arriver !',
+  'Pas grave, on réessaie !',
+  'C’est en s’entraînant qu’on devient fort !',
+  'Tu es sur la bonne voie !',
+  'On continue doucement, tu peux le faire.',
+  'Ce n’est pas grave de se tromper.',
+  'Chaque essai te rend meilleur !',
+  'Bravo d’avoir essayé !',
+  'Tu progresses à ton rythme.',
+  'On recommence, tranquillement.',
+  'Tu es courageux, continue !',
+  'Ça arrive à tout le monde !',
+  'On apprend en jouant.',
+  'Tu peux être fier de toi.',
+  'Encore un petit effort !',
+  'Tu vas y arriver, j’en suis sûr.',
+  'On passe à la suite, sans stress.'
 ];
 
 const POSITIVE = [
   'Bravo !',
   'Génial !',
   'Excellent !',
-  'Trop fort !'
+  'Trop fort !',
+  'Super !',
+  'Magnifique !',
+  'Incroyable !',
+  'Bien joué !',
+  'Parfait !',
+  'Formidable !',
+  'Tu assures !',
+  'Ça, c’est du rapide !',
+  'Champion !',
+  'Top !',
+  'Ouiiii !',
+  'Quelle belle réponse !'
 ];
+
+let lastEncouragingIndex = -1;
+
+function pickEncouraging() {
+  if (ENCOURAGING.length <= 1) return ENCOURAGING[0] || '';
+  let idx = Math.floor(Math.random() * ENCOURAGING.length);
+  if (idx === lastEncouragingIndex) idx = (idx + 1) % ENCOURAGING.length;
+  lastEncouragingIndex = idx;
+  return ENCOURAGING[idx];
+}
 
 function ensureBadge(state, id, label) {
   if (state.rewards.badges.includes(id)) return false;
@@ -641,8 +679,7 @@ function renderPlay() {
 
     if (toast) {
       toast.className = `toast ${correct ? 'good' : 'bad'}`;
-      toast.textContent = correct ? pick(POSITIVE) : pick(ENCOURAGING);
-      if (timedOut) toast.textContent = 'Pas grave ! On continue.';
+      toast.textContent = correct ? pick(POSITIVE) : pickEncouraging();
     }
 
     if (sparkle) {
@@ -652,9 +689,10 @@ function renderPlay() {
 
     playTone({ on: s.config.soundOn, type: correct ? 'good' : 'bad' });
 
+    const delayMs = correct ? 550 : 1000;
     window.setTimeout(() => {
       nextQuestion();
-    }, 550);
+    }, delayMs);
   }
 
   const page = renderShell({
@@ -674,9 +712,10 @@ function renderPlay() {
             onkeydown: (e) => {
               if (e.key === 'Enter') {
                 const input = e.currentTarget;
-                const v = Number(String(input.value).trim());
-                const ok = Number.isFinite(v) && v === current.answer;
-                onAnswered({ correct: ok, value: Number.isFinite(v) ? v : null, timedOut: false });
+                const raw = String(input.value ?? '').trim();
+                const v = raw === '' ? null : Number(raw);
+                const ok = v !== null && Number.isFinite(v) && v === current.answer;
+                onAnswered({ correct: ok, value: v !== null && Number.isFinite(v) ? v : null, timedOut: false });
               }
             }
           }),
@@ -685,9 +724,10 @@ function renderPlay() {
               class: 'btn btn-success',
               onclick: () => {
                 const input = page.querySelector('[data-answer]');
-                const v = Number(String(input.value).trim());
-                const ok = Number.isFinite(v) && v === current.answer;
-                onAnswered({ correct: ok, value: Number.isFinite(v) ? v : null, timedOut: false });
+                const raw = String(input?.value ?? '').trim();
+                const v = raw === '' ? null : Number(raw);
+                const ok = v !== null && Number.isFinite(v) && v === current.answer;
+                onAnswered({ correct: ok, value: v !== null && Number.isFinite(v) ? v : null, timedOut: false });
               },
               text: 'Valider'
             }),

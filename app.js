@@ -296,6 +296,50 @@ function renderShell({ titleRight, content }) {
     h('div', { class: 'sub', text: state.config.soundOn ? 'Sons: ON' : 'Sons: OFF' })
   ]);
 
+  const progressButton = h('button', {
+    class: 'btn btn-secondary',
+    onclick: () => setRoute('/progress'),
+    'aria-label': 'Mes progrès',
+    title: 'Mes progrès'
+  }, [
+    h('span', { text: 'Mes progrès' })
+  ]);
+
+  const settingsButton = h('button', {
+    class: 'btn btn-secondary',
+    onclick: () => setRoute('/settings'),
+    'aria-label': 'Réglages',
+    title: 'Réglages'
+  }, [
+    h('span', {
+      'aria-hidden': 'true',
+      style: 'display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;'
+    }, [
+      (() => {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('width', '20');
+        svg.setAttribute('height', '20');
+        svg.setAttribute('fill', 'none');
+        svg.setAttribute('stroke', 'currentColor');
+        svg.setAttribute('stroke-width', '2');
+        svg.setAttribute('stroke-linecap', 'round');
+        svg.setAttribute('stroke-linejoin', 'round');
+
+        const gear = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        gear.setAttribute('d', 'M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.5a2 2 0 0 1-1 1.74l-.15.08a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.72l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z');
+
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', '12');
+        circle.setAttribute('cy', '12');
+        circle.setAttribute('r', '3');
+
+        svg.append(gear, circle);
+        return svg;
+      })()
+    ])
+  ]);
+
   return h('div', { class: 'shell' }, [
     h('div', { class: 'header' }, [
       h('div', { class: 'brand' }, [
@@ -307,6 +351,8 @@ function renderShell({ titleRight, content }) {
       ]),
       h('div', { class: 'btn-row' }, [
         soundToggle,
+        progressButton,
+        settingsButton,
         titleRight || h('div', { class: 'badge', text: `Niveau ${state.level}` })
       ])
     ]),
@@ -326,141 +372,158 @@ function renderHome() {
       h('div', { class: 'kids-big', text: 'Prêt à jouer ?' }),
       h('div', { class: 'sub', text: 'Une question à la fois. Tu réponds vite, et tu progresses !' }),
       h('div', { class: 'sub', text: 'Choisis ton jeu :' }),
-      h('div', { class: 'btn-row' }, [
+      h('div', { class: 'op-grid' }, [
         h('button', {
-          class: `btn ${state.operation === 'add' ? 'btn-primary' : 'btn-secondary'}`,
+          class: `op-tile ${state.operation === 'add' ? 'selected' : ''}`,
           onclick: () => {
             const s = loadState();
             s.operation = 'add';
             saveState(s);
             render();
           },
-          text: 'Addition'
-        }),
+          'aria-label': 'Addition'
+        }, [
+          h('div', { class: 'op-icon', text: '+' }),
+          h('div', { class: 'op-label', text: 'Addition' })
+        ]),
         h('button', {
-          class: `btn ${state.operation === 'sub' ? 'btn-primary' : 'btn-secondary'}`,
+          class: `op-tile ${state.operation === 'sub' ? 'selected' : ''}`,
           onclick: () => {
             const s = loadState();
             s.operation = 'sub';
             saveState(s);
             render();
           },
-          text: 'Soustraction'
-        })
+          'aria-label': 'Soustraction'
+        }, [
+          h('div', { class: 'op-icon', text: '−' }),
+          h('div', { class: 'op-label', text: 'Soustraction' })
+        ])
       ]),
       h('div', { class: 'btn-row' }, [
-        h('button', { class: 'btn btn-primary', onclick: () => setRoute('/play'), text: 'Jouer' }),
-        h('button', { class: 'btn btn-secondary', onclick: () => setRoute('/progress'), text: 'Mes progrès' })
+        h('button', { class: 'btn btn-primary btn-full', onclick: () => setRoute('/play'), text: 'Jouer' })
       ]),
       h('div', { class: 'toast', text: `Niveau actuel: ${state.level} • Étoiles: ${state.rewards.stars}` })
     ])
   ]);
 
-  const right = h('div', { class: 'card' }, [
-    h('div', { class: 'card-inner grid' }, [
-      h('div', { class: 'sub', text: 'Réglages simples' }),
-      h('div', { class: 'stats' }, [
-        stat('Questions', String(state.totals.played)),
-        stat('Précision', `${Math.round(computeAccuracy(state.totals) * 100)}%`),
-        stat('Temps (départ)', formatMs(state.config.startTimeMs)),
-        stat('Temps (minimum)', formatMs(state.config.minTimeMs))
+  return renderShell({
+    content: h('div', { class: 'grid' }, [left])
+  });
+}
+
+function renderSettings() {
+  const state = loadState();
+
+  const page = renderShell({
+    titleRight: h('button', { class: 'btn btn-secondary', onclick: () => setRoute('/'), text: 'Retour' }),
+    content: h('div', { class: 'grid grid-2' }, [
+      h('div', { class: 'card' }, [
+        h('div', { class: 'card-inner grid' }, [
+          h('div', { class: 'kids-big', text: 'Réglages' }),
+          h('div', { class: 'sub', text: 'Réservé aux parents (ou avec un adulte).' }),
+          h('div', { class: 'stats' }, [
+            stat('Questions', String(state.totals.played)),
+            stat('Précision', `${Math.round(computeAccuracy(state.totals) * 100)}%`),
+            stat('Temps (départ)', formatMs(state.config.startTimeMs)),
+            stat('Temps (minimum)', formatMs(state.config.minTimeMs))
+          ]),
+          h('div', { class: 'sub', text: 'Astuce: tu peux activer/désactiver les sons en haut.' })
+        ])
       ]),
-      h('div', { class: 'grid' }, [
-        h('div', { class: 'sub', text: 'Personnalisation du temps (en secondes)' }),
-        h('input', {
-          class: 'input',
-          type: 'number',
-          step: '0.1',
-          min: String(MIN_ALLOWED_MIN_TIME_MS / 1000),
-          value: String((state.config.minTimeMs / 1000).toFixed(1)),
-          'data-min-time': '',
-          oninput: (e) => {
-            const minEl = e.currentTarget;
-            const startEl = document.querySelector('[data-start-time]');
-
-            const minSec = Number(String(minEl.value ?? '').replace(',', '.'));
-            if (!Number.isFinite(minSec) || !startEl) return;
-
-            const normalizedMinSec = Math.max(minSec, MIN_ALLOWED_MIN_TIME_MS / 1000);
-            startEl.min = String(normalizedMinSec);
-
-            const startSec = Number(String(startEl.value ?? '').replace(',', '.'));
-            if (Number.isFinite(startSec) && startSec < normalizedMinSec) {
-              startEl.value = String(normalizedMinSec.toFixed(1));
-            }
-          }
-        }),
-        h('input', {
-          class: 'input',
-          type: 'number',
-          step: '0.1',
-          min: String((state.config.minTimeMs / 1000).toFixed(1)),
-          value: String((state.config.startTimeMs / 1000).toFixed(1)),
-          'data-start-time': '',
-          onchange: (e) => {
-            const startEl = e.currentTarget;
-            const minEl = document.querySelector('[data-min-time]');
-            if (!minEl) return;
-
-            const minSec = Number(String(minEl.value ?? '').replace(',', '.'));
-            const normalizedMinSec = Math.max(minSec, MIN_ALLOWED_MIN_TIME_MS / 1000);
-
-            const startSec = Number(String(startEl.value ?? '').replace(',', '.'));
-            if (!Number.isFinite(startSec)) return;
-
-            if (startSec < normalizedMinSec) {
-              startEl.value = String(normalizedMinSec.toFixed(1));
-            }
-          }
-        }),
-        h('div', { class: 'btn-row' }, [
-          h('button', {
-            class: 'btn btn-secondary',
-            onclick: () => {
-              const s = loadState();
-
-              const minEl = document.querySelector('[data-min-time]');
+      h('div', { class: 'card' }, [
+        h('div', { class: 'card-inner grid' }, [
+          h('div', { class: 'sub', text: 'Personnalisation du temps (en secondes)' }),
+          h('input', {
+            class: 'input',
+            type: 'number',
+            step: '0.1',
+            min: String(MIN_ALLOWED_MIN_TIME_MS / 1000),
+            value: String((state.config.minTimeMs / 1000).toFixed(1)),
+            'data-min-time': '',
+            oninput: (e) => {
+              const minEl = e.currentTarget;
               const startEl = document.querySelector('[data-start-time]');
 
-              const minSec = Number(String(minEl?.value ?? '').replace(',', '.'));
-              const startSec = Number(String(startEl?.value ?? '').replace(',', '.'));
+              const minSec = Number(String(minEl.value ?? '').replace(',', '.'));
+              if (!Number.isFinite(minSec) || !startEl) return;
 
-              if (!Number.isFinite(minSec) || !Number.isFinite(startSec)) {
-                render();
-                return;
+              const normalizedMinSec = Math.max(minSec, MIN_ALLOWED_MIN_TIME_MS / 1000);
+              startEl.min = String(normalizedMinSec);
+
+              const startSec = Number(String(startEl.value ?? '').replace(',', '.'));
+              if (Number.isFinite(startSec) && startSec < normalizedMinSec) {
+                startEl.value = String(normalizedMinSec.toFixed(1));
               }
+            }
+          }),
+          h('input', {
+            class: 'input',
+            type: 'number',
+            step: '0.1',
+            min: String((state.config.minTimeMs / 1000).toFixed(1)),
+            value: String((state.config.startTimeMs / 1000).toFixed(1)),
+            'data-start-time': '',
+            onchange: (e) => {
+              const startEl = e.currentTarget;
+              const minEl = document.querySelector('[data-min-time]');
+              if (!minEl) return;
 
-              const minMs = Math.round(minSec * 1000);
-              const startMs = Math.round(startSec * 1000);
+              const minSec = Number(String(minEl.value ?? '').replace(',', '.'));
+              const normalizedMinSec = Math.max(minSec, MIN_ALLOWED_MIN_TIME_MS / 1000);
 
-              s.config.minTimeMs = clamp(minMs, MIN_ALLOWED_MIN_TIME_MS, 60_000);
-              s.config.startTimeMs = clamp(startMs, s.config.minTimeMs, 120_000);
+              const startSec = Number(String(startEl.value ?? '').replace(',', '.'));
+              if (!Number.isFinite(startSec)) return;
 
-              saveState(s);
-              render();
-            },
-            text: 'Enregistrer'
-          })
-        ]),
-        h('div', { class: 'sub', text: `Contraintes : minimum ≥ ${(MIN_ALLOWED_MIN_TIME_MS / 1000).toFixed(1)}s et départ ≥ minimum.` })
-      ]),
-      h('div', { class: 'btn-row' }, [
-        h('button', {
-          class: 'btn btn-danger',
-          onclick: () => {
-            localStorage.removeItem(STORAGE_KEY);
-            render();
-          },
-          text: 'Réinitialiser'
-        })
-      ]),
-      h('div', { class: 'sub', text: 'Astuce: tu peux activer/désactiver les sons en haut.' })
+              if (startSec < normalizedMinSec) {
+                startEl.value = String(normalizedMinSec.toFixed(1));
+              }
+            }
+          }),
+          h('div', { class: 'btn-row' }, [
+            h('button', {
+              class: 'btn btn-secondary',
+              onclick: () => {
+                const s = loadState();
+
+                const minEl = document.querySelector('[data-min-time]');
+                const startEl = document.querySelector('[data-start-time]');
+
+                const minSec = Number(String(minEl?.value ?? '').replace(',', '.'));
+                const startSec = Number(String(startEl?.value ?? '').replace(',', '.'));
+
+                if (!Number.isFinite(minSec) || !Number.isFinite(startSec)) {
+                  render();
+                  return;
+                }
+
+                const minMs = Math.round(minSec * 1000);
+                const startMs = Math.round(startSec * 1000);
+
+                s.config.minTimeMs = clamp(minMs, MIN_ALLOWED_MIN_TIME_MS, 60_000);
+                s.config.startTimeMs = clamp(startMs, s.config.minTimeMs, 120_000);
+
+                saveState(s);
+                render();
+              },
+              text: 'Enregistrer'
+            }),
+            h('button', {
+              class: 'btn btn-danger',
+              onclick: () => {
+                localStorage.removeItem(STORAGE_KEY);
+                setRoute('/');
+              },
+              text: 'Réinitialiser'
+            })
+          ]),
+          h('div', { class: 'sub', text: `Contraintes : minimum ≥ ${(MIN_ALLOWED_MIN_TIME_MS / 1000).toFixed(1)}s et départ ≥ minimum.` })
+        ])
+      ])
     ])
-  ]);
-
-  return renderShell({
-    content: h('div', { class: 'grid grid-2' }, [left, right])
   });
+
+  return page;
 }
 
 function stat(k, v) {
@@ -767,6 +830,11 @@ function render() {
 
   if (route === '/progress') {
     mount(renderProgress());
+    return;
+  }
+
+  if (route === '/settings') {
+    mount(renderSettings());
     return;
   }
 

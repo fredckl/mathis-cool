@@ -136,6 +136,54 @@ a {
   flex-wrap: wrap;
 }
 
+.op-grid {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.op-tile {
+  width: 150px;
+  height: 150px;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.25);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  gap: 10px;
+  transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+}
+
+.op-tile:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+.op-tile.selected {
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.35), rgba(34, 197, 94, 0.25));
+  border-color: rgba(99, 102, 241, 0.65);
+}
+
+.op-icon {
+  font-weight: 1000;
+  font-size: 64px;
+  line-height: 1;
+}
+
+.op-label {
+  font-weight: 900;
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.84);
+}
+
+.btn-full {
+  width: 100%;
+}
+
 .btn {
   appearance: none;
   border: none;

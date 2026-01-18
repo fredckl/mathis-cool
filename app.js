@@ -512,8 +512,7 @@ function renderHome() {
       ]),
       h('div', { class: 'btn-row' }, [
         h('button', { class: 'btn btn-primary btn-full', onclick: () => setRoute('/play'), text: 'Jouer' })
-      ]),
-      h('div', { class: 'toast', text: `Niveau actuel: ${state.level} • Étoiles: ${state.rewards.stars}` })
+      ])
     ])
   ]);
 
@@ -718,6 +717,18 @@ function stat(k, v) {
   ]);
 }
 
+function badgeLabel(id) {
+  const map = {
+    m10: 'Badge 10 questions',
+    m25: 'Badge 25 questions',
+    m50: 'Badge 50 questions',
+    m100: 'Badge 100 questions',
+    acc80: 'Badge précision 80%',
+    acc90: 'Badge précision 90%'
+  };
+  return map[id] || id;
+}
+
 function renderProgress() {
   const state = loadState();
   const avg = computeAvgTimeMs(state.totals);
@@ -751,7 +762,7 @@ function renderProgress() {
       h('div', { class: 'sub', text: 'Récompenses' }),
       h('div', { class: 'toast', text: `Étoiles: ${state.rewards.stars}` }),
       h('div', { class: 'toast', text: state.rewards.badges.length ? `Badges: ${state.rewards.badges.length}` : 'Badges: aucun pour le moment' }),
-      h('div', { class: 'sub', text: state.rewards.badges.length ? state.rewards.badges.join(' • ') : 'Joue encore pour débloquer des badges.' })
+
     ])
   ]);
 

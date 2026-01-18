@@ -8,6 +8,16 @@ const ASSETS = [
   '/manifest.webmanifest'
 ];
 
+function isAppShell(req) {
+  try {
+    const url = new URL(req.url);
+    if (url.origin !== self.location.origin) return false;
+    return url.pathname === '/' || url.pathname === '/index.html' || url.pathname === '/styles.css' || url.pathname === '/app.js' || url.pathname === '/manifest.webmanifest';
+  } catch {
+    return false;
+  }
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
@@ -28,6 +38,21 @@ self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
 
+  // Network-first for app shell files to ensure updates are picked up quickly.
+  if (isAppShell(req)) {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          const copy = res.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
+          return res;
+        })
+        .catch(() => caches.match(req))
+    );
+    return;
+  }
+
+  // Cache-first for everything else (keeps the app snappy and offline-friendly).
   event.respondWith(
     caches.match(req).then((cached) =>
       cached || fetch(req).then((res) => {

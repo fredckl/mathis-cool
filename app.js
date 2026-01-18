@@ -120,6 +120,24 @@ function exportLocalStorage() {
   setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
+async function clearUserCacheAndReload() {
+  try {
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+    }
+
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map((r) => r.unregister()));
+    }
+  } catch {
+    // ignore
+  }
+
+  window.location.reload();
+}
+
 async function importLocalStorageFromFile(file) {
   if (!file) return;
   const text = await file.text();
@@ -742,6 +760,13 @@ function renderSettings() {
                 render();
               },
               text: 'Enregistrer'
+            }),
+            h('button', {
+              class: 'btn btn-secondary',
+              onclick: async () => {
+                await clearUserCacheAndReload();
+              },
+              text: 'Vider le cache'
             }),
             h('button', {
               class: 'btn btn-danger',

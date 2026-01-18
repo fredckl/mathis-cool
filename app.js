@@ -343,6 +343,13 @@ function h(tag, attrs = {}, children = []) {
   return el;
 }
 
+function levelStarsBadge(state) {
+  return h('div', { class: 'badge badge-2l' }, [
+    h('div', { class: 'badge-top', text: `Niveau ${state.level}` }),
+    h('div', { class: 'badge-bottom', text: `⭐ ${state.rewards.stars}` })
+  ]);
+}
+
 function setRoute(route) {
   window.location.hash = route;
 }
@@ -427,10 +434,10 @@ function renderShell({ titleRight, content }) {
         ])
       ]),
       h('div', { class: 'btn-row' }, [
-        soundToggle,
+        titleRight || levelStarsBadge(state),
         progressButton,
-        settingsButton,
-        titleRight || h('div', { class: 'badge', text: `Niveau ${state.level}` })
+        soundToggle,
+        settingsButton
       ])
     ]),
     content,
@@ -965,7 +972,7 @@ function renderPlay() {
   }
 
   const page = renderShell({
-    titleRight: h('div', { class: 'badge', text: `Niveau ${state.level}` }),
+    titleRight: levelStarsBadge(state),
     content: h('div', { class: 'grid' }, [
       h('div', { class: 'card sparkle', 'data-sparkle': '' }, [
         h('div', { class: 'card-inner grid' }, [

@@ -104,6 +104,25 @@ a {
   font-size: 12px;
 }
 
+.badge-2l {
+  display: grid;
+  gap: 2px;
+  text-align: center;
+  justify-items: center;
+  line-height: 1.05;
+}
+
+.badge-2l .badge-top {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.badge-2l .badge-bottom {
+  color: var(--text);
+  font-weight: 900;
+  font-size: 12px;
+}
+
 .session-counter {
   justify-self: end;
   width: max-content;

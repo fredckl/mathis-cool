@@ -1,0 +1,22 @@
+services:
+  mathis-cool:
+    image: dockhub.lieberweiss.com/frederickoller/mathis-cool:latest
+    networks:
+      - public
+      - rendez_vous
+    deploy:
+      labels:
+        traefik.enable: "true"
+        traefik.docker.network: "${TRAEFIK_NETWORK}"
+        traefik.http.routers.rendez-vous.rule: "Host(`${DOMAIN}`)"
+        traefik.http.routers.rendez-vous.entrypoints: "websecure"
+        traefik.http.routers.rendez-vous.tls: "true"
+        traefik.http.services.rendez-vous.loadbalancer.server.port: "${PORT}"
+
+networks:
+  public:
+    external: true
+    name: "${TRAEFIK_NETWORK}"
+  rendez_vous:
+    driver: overlay
+    attachable: true

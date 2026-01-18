@@ -93,6 +93,54 @@ function saveState(state) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
+function exportLocalStorage() {
+  const data = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key) continue;
+    data[key] = localStorage.getItem(key);
+  }
+
+  const payload = {
+    meta: {
+      app: APP_NAME,
+      exportedAt: new Date().toISOString()
+    },
+    data
+  };
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `mathis-cool-localstorage-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+async function importLocalStorageFromFile(file) {
+  if (!file) return;
+  const text = await file.text();
+  const parsed = JSON.parse(text);
+
+  const data = parsed?.data;
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    throw new Error('Invalid import format');
+  }
+
+  const ok = window.confirm('Importer ces données va remplacer TOUTES les données locales (localStorage) sur cet appareil. Continuer ?');
+  if (!ok) return;
+
+  localStorage.clear();
+  for (const [k, v] of Object.entries(data)) {
+    if (typeof k !== 'string') continue;
+    if (v === null || v === undefined) continue;
+    localStorage.setItem(k, String(v));
+  }
+}
+
 function formatMs(ms) {
   if (!Number.isFinite(ms) || ms <= 0) return '0.0s';
   return `${(ms / 1000).toFixed(1)}s`;
@@ -701,7 +749,46 @@ function renderSettings() {
               text: 'Réinitialiser'
             })
           ]),
-          h('div', { class: 'sub', text: `Contraintes : minimum ≥ ${(MIN_ALLOWED_MIN_TIME_MS / 1000).toFixed(1)}s et départ ≥ minimum.` })
+          h('div', { class: 'sub', text: `Contraintes : minimum ≥ ${(MIN_ALLOWED_MIN_TIME_MS / 1000).toFixed(1)}s et départ ≥ minimum.` }),
+          (() => {
+            const fileInput = h('input', {
+              type: 'file',
+              accept: 'application/json',
+              style: 'display:none'
+            });
+
+            fileInput.addEventListener('change', async (e) => {
+              const f = e.currentTarget?.files?.[0];
+              try {
+                await importLocalStorageFromFile(f);
+                window.location.reload();
+              } catch {
+                window.alert("Impossible d'importer ce fichier.");
+              } finally {
+                e.currentTarget.value = '';
+              }
+            });
+
+            return h('div', { class: 'btn-row' }, [
+              h('button', {
+                class: 'btn btn-secondary',
+                onclick: () => {
+                  try {
+                    exportLocalStorage();
+                  } catch {
+                    window.alert("Impossible d'exporter les données.");
+                  }
+                },
+                text: 'Exporter'
+              }),
+              h('button', {
+                class: 'btn btn-secondary',
+                onclick: () => fileInput.click(),
+                text: 'Importer'
+              }),
+              fileInput
+            ]);
+          })()
         ])
       ])
     ])

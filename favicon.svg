@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#212b46"/>
+      <stop offset="1" stop-color="#0b1020"/>
+    </linearGradient>
+    <linearGradient id="screen" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#c7f9cc"/>
+    </linearGradient>
+    <filter id="sh" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <rect x="6" y="6" width="88" height="88" rx="22" fill="url(#body)" filter="url(#sh)"/>
+
+  <rect x="18" y="16" width="64" height="24" rx="10" fill="url(#screen)"/>
+  <rect x="22" y="20" width="22" height="6" rx="3" fill="#0b1020" opacity="0.18"/>
+  <rect x="22" y="30" width="36" height="6" rx="3" fill="#0b1020" opacity="0.18"/>
+
+  <g>
+    <rect x="18" y="48" width="18" height="18" rx="7" fill="#4f46e5"/>
+    <rect x="41" y="48" width="18" height="18" rx="7" fill="#22c55e"/>
+    <rect x="64" y="48" width="18" height="18" rx="7" fill="#f59e0b"/>
+    <rect x="18" y="71" width="18" height="18" rx="7" fill="#ef4444"/>
+    <rect x="41" y="71" width="18" height="18" rx="7" fill="#0ea5e9"/>
+    <rect x="64" y="71" width="18" height="18" rx="7" fill="#a855f7"/>
+  </g>
+
+  <g fill="white">
+    <rect x="26" y="52" width="2" height="10" rx="1"/>
+    <rect x="22" y="56" width="10" height="2" rx="1"/>
+
+    <circle cx="50" cy="54" r="2.5"/>
+    <circle cx="50" cy="60" r="2.5"/>
+    <rect x="46" y="56" width="8" height="2" rx="1"/>
+
+    <rect x="68" y="56" width="10" height="2" rx="1"/>
+
+    <rect x="66" y="77" width="14" height="2.8" rx="1.4"/>
+    <rect x="66" y="82" width="14" height="2.8" rx="1.4"/>
+
+    <rect x="22" y="77" width="10" height="2.8" rx="1.4" transform="rotate(45 27 78)"/>
+    <rect x="22" y="77" width="10" height="2.8" rx="1.4" transform="rotate(-45 27 78)"/>
+
+    <rect x="45" y="79" width="10" height="2.8" rx="1.4"/>
+  </g>
+</svg>

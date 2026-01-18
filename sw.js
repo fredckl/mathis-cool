@@ -5,6 +5,7 @@ const ASSETS = [
   '/index.html',
   '/styles.css',
   '/app.js',
+  '/favicon.svg',
   '/manifest.webmanifest'
 ];
 
@@ -12,7 +13,7 @@ function isAppShell(req) {
   try {
     const url = new URL(req.url);
     if (url.origin !== self.location.origin) return false;
-    return url.pathname === '/' || url.pathname === '/index.html' || url.pathname === '/styles.css' || url.pathname === '/app.js' || url.pathname === '/manifest.webmanifest';
+    return url.pathname === '/' || url.pathname === '/index.html' || url.pathname === '/styles.css' || url.pathname === '/app.js' || url.pathname === '/favicon.svg' || url.pathname === '/manifest.webmanifest';
   } catch {
     return false;
   }

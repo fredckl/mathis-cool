@@ -923,7 +923,30 @@ function drawChart(state) {
 function renderPlay() {
   const state = loadState();
 
-  let current = generateQuestion(state);
+  const seenCorrect = new Set();
+
+  function questionKey(q) {
+    if (!q) return '';
+    if (q.op === 'add' || q.op === 'mul') {
+      const x = Math.min(q.a, q.b);
+      const y = Math.max(q.a, q.b);
+      return `${q.op}|${x}|${y}`;
+    }
+    return `${q.op}|${q.a}|${q.b}`;
+  }
+
+  function pickNextQuestion(st) {
+    const maxAttempts = 60;
+    let q = generateQuestion(st);
+    for (let i = 0; i < maxAttempts; i++) {
+      const k = questionKey(q);
+      if (!k || !seenCorrect.has(k)) return q;
+      q = generateQuestion(st);
+    }
+    return q;
+  }
+
+  let current = pickNextQuestion(state);
   let startedAt = 0;
   let timerId = null;
   let progressRaf = null;
@@ -1000,7 +1023,7 @@ function renderPlay() {
   function nextQuestion() {
     const st = loadState();
     timeLimitMs = calcTimeLimitMs(st);
-    current = generateQuestion(st);
+    current = pickNextQuestion(st);
 
     const math = page.querySelector('[data-math]');
     const input = page.querySelector('[data-answer]');
@@ -1039,6 +1062,7 @@ function renderPlay() {
     s.totals.totalAnswerTimeMs += answerTimeMs;
 
     if (correct) {
+      seenCorrect.add(questionKey(current));
       s.totals.correct += 1;
       s.streak += 1;
       if (s.streak % s.config.streakToLevelUp === 0) {

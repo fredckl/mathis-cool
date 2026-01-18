@@ -1172,17 +1172,17 @@ function renderPlay() {
               h('button', {
                 class: 'btn btn-secondary keypad-btn keypad-btn-wide',
                 type: 'button',
-                'aria-label': 'Effacer',
-                onpointerdown: (e) => e.preventDefault(),
-                onclick: () => backspace()
-              }, [h('span', { text: '⌫' })]),
-              h('button', {
-                class: 'btn btn-secondary keypad-btn',
-                type: 'button',
                 'aria-label': 'Chiffre 0',
                 onpointerdown: (e) => e.preventDefault(),
                 onclick: () => appendDigit('0')
               }, [h('span', { text: '0' })]),
+              h('button', {
+                class: 'btn btn-secondary keypad-btn',
+                type: 'button',
+                'aria-label': 'Effacer',
+                onpointerdown: (e) => e.preventDefault(),
+                onclick: () => backspace()
+              }, [h('span', { text: '⌫' })]),
               h('button', {
                 class: 'btn btn-success keypad-btn keypad-btn-wide',
                 type: 'button',

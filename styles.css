@@ -306,6 +306,18 @@ a {
   transform: scale(1);
  }
 
+ .submit-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+ }
+
 .input {
   width: 100%;
   font-size: 22px;
@@ -316,6 +328,11 @@ a {
   color: var(--text);
   outline: none;
 }
+
+ .answer-form {
+  display: grid;
+  gap: 12px;
+ }
 
 .input:focus {
   border-color: rgba(99, 102, 241, 0.7);
@@ -516,4 +533,14 @@ canvas {
 
  .keypad .btn-success.keypad-btn-wide {
    grid-column: span 3;
+ }
+
+ @media (max-width: 760px) {
+   .keypad-grid .keypad-btn {
+     display: none;
+   }
+
+   .keypad-grid .keypad-verify {
+     display: block;
+   }
  }

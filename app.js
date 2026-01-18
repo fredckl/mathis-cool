@@ -965,6 +965,8 @@ function renderPlay() {
     const v = raw === '' ? null : Number(raw);
     const ok = v !== null && Number.isFinite(v) && v === current.answer;
     onAnswered({ correct: ok, value: v !== null && Number.isFinite(v) ? v : null, timedOut: false });
+    keepFocus();
+    window.setTimeout(keepFocus, 0);
   }
 
   function keepFocus() {
@@ -1112,6 +1114,8 @@ function renderPlay() {
 
     playTone({ on: s.config.soundOn, type: correct ? 'good' : 'bad' });
 
+    window.setTimeout(keepFocus, 0);
+
     if (sessionIndex >= sessionTotal) {
       const counter = page.querySelector('[data-session-counter]');
       if (counter) counter.textContent = `Terminé ! ${sessionTotal} / ${sessionTotal}`;
@@ -1148,48 +1152,50 @@ function renderPlay() {
             h('div', { class: 'firework', 'data-firework': '', text: '🎆' })
           ]),
           h('div', { class: 'progress' }, [h('div', { 'data-progress-inner': '' })]),
-          h('input', {
-            class: 'input',
-            inputmode: 'numeric',
-            pattern: '[0-9]*',
-            placeholder: 'Ta réponse',
-            'data-answer': '',
-            onkeydown: (e) => {
-              if (e.key === 'Enter') {
-                submitAnswer();
-              }
+          h('form', {
+            class: 'answer-form',
+            onsubmit: (e) => {
+              e.preventDefault();
+              submitAnswer();
             }
-          }),
-          h('div', { class: 'keypad', 'data-keypad': '' }, [
-            h('div', { class: 'keypad-grid' }, [
-              ...['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((d) => h('button', {
-                class: 'btn btn-secondary keypad-btn',
-                type: 'button',
-                'aria-label': `Chiffre ${d}`,
-                onpointerdown: (e) => e.preventDefault(),
-                onclick: () => appendDigit(d)
-              }, [h('span', { text: d })])),
-              h('button', {
-                class: 'btn btn-secondary keypad-btn keypad-btn-wide',
-                type: 'button',
-                'aria-label': 'Chiffre 0',
-                onpointerdown: (e) => e.preventDefault(),
-                onclick: () => appendDigit('0')
-              }, [h('span', { text: '0' })]),
-              h('button', {
-                class: 'btn btn-secondary keypad-btn',
-                type: 'button',
-                'aria-label': 'Effacer',
-                onpointerdown: (e) => e.preventDefault(),
-                onclick: () => backspace()
-              }, [h('span', { text: '⌫' })]),
-              h('button', {
-                class: 'btn btn-success keypad-btn keypad-btn-wide',
-                type: 'button',
-                'aria-label': 'Vérifier la réponse',
-                onpointerdown: (e) => e.preventDefault(),
-                onclick: () => submitAnswer()
-              }, [h('span', { text: 'Vérifier' })])
+          }, [
+            h('input', {
+              class: 'input',
+              inputmode: 'numeric',
+              pattern: '[0-9]*',
+              placeholder: 'Ta réponse',
+              'data-answer': ''
+            }),
+            h('button', { class: 'submit-hidden', type: 'submit', tabindex: '-1' }, []),
+            h('div', { class: 'keypad', 'data-keypad': '' }, [
+              h('div', { class: 'keypad-grid' }, [
+                ...['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((d) => h('button', {
+                  class: 'btn btn-secondary keypad-btn',
+                  type: 'button',
+                  'aria-label': `Chiffre ${d}`,
+                  onpointerdown: (e) => e.preventDefault(),
+                  onclick: () => appendDigit(d)
+                }, [h('span', { text: d })])),
+                h('button', {
+                  class: 'btn btn-secondary keypad-btn keypad-btn-wide',
+                  type: 'button',
+                  'aria-label': 'Chiffre 0',
+                  onpointerdown: (e) => e.preventDefault(),
+                  onclick: () => appendDigit('0')
+                }, [h('span', { text: '0' })]),
+                h('button', {
+                  class: 'btn btn-secondary keypad-btn',
+                  type: 'button',
+                  'aria-label': 'Effacer',
+                  onpointerdown: (e) => e.preventDefault(),
+                  onclick: () => backspace()
+                }, [h('span', { text: '⌫' })]),
+                h('button', {
+                  class: 'btn btn-success keypad-btn keypad-btn-wide keypad-verify',
+                  type: 'submit',
+                  'aria-label': 'Vérifier la réponse'
+                }, [h('span', { text: 'Vérifier' })])
+              ])
             ])
           ]),
           h('div', { class: 'btn-row' }, [

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mathis-cool-v1.3';
+const CACHE_NAME = 'mathis-cool-v1.4';
 
 const ASSETS = [
   '/',
@@ -39,13 +39,23 @@ self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
 
+  let url;
+  try {
+    url = new URL(req.url);
+  } catch {
+    return;
+  }
+
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
+  if (url.origin !== self.location.origin) return;
+
   // Network-first for app shell files to ensure updates are picked up quickly.
   if (isAppShell(req)) {
     event.respondWith(
       fetch(req)
         .then((res) => {
           const copy = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
+          if (res && res.ok) caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
           return res;
         })
         .catch(() => caches.match(req))
@@ -58,7 +68,7 @@ self.addEventListener('fetch', (event) => {
     caches.match(req).then((cached) =>
       cached || fetch(req).then((res) => {
         const copy = res.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
+        if (res && res.ok) caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
         return res;
       }).catch(() => cached)
     )

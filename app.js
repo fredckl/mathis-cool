@@ -300,15 +300,45 @@ function renderHome() {
           step: '0.1',
           min: String(MIN_ALLOWED_MIN_TIME_MS / 1000),
           value: String((state.config.minTimeMs / 1000).toFixed(1)),
-          'data-min-time': ''
+          'data-min-time': '',
+          oninput: (e) => {
+            const minEl = e.currentTarget;
+            const startEl = document.querySelector('[data-start-time]');
+
+            const minSec = Number(String(minEl.value ?? '').replace(',', '.'));
+            if (!Number.isFinite(minSec) || !startEl) return;
+
+            const normalizedMinSec = Math.max(minSec, MIN_ALLOWED_MIN_TIME_MS / 1000);
+            startEl.min = String(normalizedMinSec);
+
+            const startSec = Number(String(startEl.value ?? '').replace(',', '.'));
+            if (Number.isFinite(startSec) && startSec < normalizedMinSec) {
+              startEl.value = String(normalizedMinSec.toFixed(1));
+            }
+          }
         }),
         h('input', {
           class: 'input',
           type: 'number',
           step: '0.1',
-          min: String(MIN_ALLOWED_MIN_TIME_MS / 1000),
+          min: String((state.config.minTimeMs / 1000).toFixed(1)),
           value: String((state.config.startTimeMs / 1000).toFixed(1)),
-          'data-start-time': ''
+          'data-start-time': '',
+          onchange: (e) => {
+            const startEl = e.currentTarget;
+            const minEl = document.querySelector('[data-min-time]');
+            if (!minEl) return;
+
+            const minSec = Number(String(minEl.value ?? '').replace(',', '.'));
+            const normalizedMinSec = Math.max(minSec, MIN_ALLOWED_MIN_TIME_MS / 1000);
+
+            const startSec = Number(String(startEl.value ?? '').replace(',', '.'));
+            if (!Number.isFinite(startSec)) return;
+
+            if (startSec < normalizedMinSec) {
+              startEl.value = String(normalizedMinSec.toFixed(1));
+            }
+          }
         }),
         h('div', { class: 'btn-row' }, [
           h('button', {

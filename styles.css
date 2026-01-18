@@ -12,6 +12,15 @@
   --radius: 20px;
 }
 
+html[data-theme='light'] {
+  --bg: #f4f6fb;
+  --card: rgba(0, 0, 0, 0.04);
+  --card-2: rgba(0, 0, 0, 0.06);
+  --text: rgba(10, 16, 32, 0.92);
+  --muted: rgba(10, 16, 32, 0.68);
+  --shadow: 0 14px 40px rgba(10, 16, 32, 0.12);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -23,18 +32,13 @@ body {
   font-family: ui-rounded, system-ui, -apple-system, Segoe UI, Roboto, Arial,
     sans-serif;
   background: radial-gradient(
-      1200px 700px at 20% 10%,
-      rgba(79, 70, 229, 0.55),
+      900px 600px at 30% 20%,
+      var(--bg-glow-1, rgba(255, 255, 255, 0.06)),
       transparent 60%
     ),
     radial-gradient(
-      900px 600px at 90% 40%,
-      rgba(34, 197, 94, 0.35),
-      transparent 60%
-    ),
-    radial-gradient(
-      1200px 700px at 50% 110%,
-      rgba(245, 158, 11, 0.25),
+      900px 600px at 80% 60%,
+      var(--bg-glow-2, rgba(255, 255, 255, 0.04)),
       transparent 60%
     ),
     var(--bg);

@@ -6,6 +6,7 @@ const MIN_ALLOWED_MIN_TIME_MS = 1500;
 
 const DEFAULT_CONFIG = {
   soundOn: true,
+  theme: 'dark',
   minTimeMs: 2200,
   startTimeMs: 5000,
   timeStepMs: 150,
@@ -56,15 +57,21 @@ function normalizeConfig(state) {
   if (!state || !state.config) return;
 
   const cfg = state.config;
+  cfg.theme = cfg.theme === 'light' ? 'light' : 'dark';
   cfg.minTimeMs = clamp(Number(cfg.minTimeMs) || DEFAULT_CONFIG.minTimeMs, MIN_ALLOWED_MIN_TIME_MS, 60_000);
   cfg.startTimeMs = clamp(Number(cfg.startTimeMs) || DEFAULT_CONFIG.startTimeMs, cfg.minTimeMs, 120_000);
+}
+
+function applyThemeFromState(state) {
+  const theme = state?.config?.theme === 'light' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = theme;
 }
 
 function mergeState(base, incoming) {
   if (!incoming || typeof incoming !== 'object') return base;
   const out = base;
   if (incoming.config) out.config = { ...base.config, ...incoming.config };
-  if (incoming.operation === 'add' || incoming.operation === 'sub') out.operation = incoming.operation;
+  if (incoming.operation === 'add' || incoming.operation === 'sub' || incoming.operation === 'mul' || incoming.operation === 'div') out.operation = incoming.operation;
   if (typeof incoming.level === 'number') out.level = incoming.level;
   if (typeof incoming.streak === 'number') out.streak = incoming.streak;
   if (incoming.totals) out.totals = { ...base.totals, ...incoming.totals };
@@ -115,19 +122,71 @@ function randInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function generateQuestion(state) {
-  const r = numberRangeForLevel(state.level);
-  let a = randInt(r.min, r.max);
-  let b = randInt(r.min, r.max);
+function opSymbol(op) {
+  if (op === 'sub') return '−';
+  if (op === 'mul') return '×';
+  if (op === 'div') return '÷';
+  return '+';
+}
 
-  const op = state.operation === 'sub' ? 'sub' : 'add';
-  if (op === 'sub' && b > a) {
-    const t = a;
-    a = b;
-    b = t;
+function opLabel(op) {
+  if (op === 'sub') return 'Soustraction';
+  if (op === 'mul') return 'Multiplication';
+  if (op === 'div') return 'Division';
+  return 'Addition';
+}
+
+function factorRangeForLevel(level) {
+  const t = clamp(level, 1, 12);
+  if (t <= 2) return { min: 0, max: 5 };
+  if (t <= 4) return { min: 0, max: 10 };
+  if (t <= 6) return { min: 0, max: 12 };
+  if (t <= 8) return { min: 0, max: 15 };
+  if (t <= 10) return { min: 0, max: 20 };
+  return { min: 0, max: 25 };
+}
+
+function divisionRangesForLevel(level) {
+  const t = clamp(level, 1, 12);
+  if (t <= 2) return { divisorMax: 5, quotientMax: 5 };
+  if (t <= 4) return { divisorMax: 8, quotientMax: 8 };
+  if (t <= 6) return { divisorMax: 10, quotientMax: 10 };
+  if (t <= 8) return { divisorMax: 12, quotientMax: 12 };
+  if (t <= 10) return { divisorMax: 15, quotientMax: 15 };
+  return { divisorMax: 20, quotientMax: 20 };
+}
+
+function generateQuestion(state) {
+  const op = state.operation === 'sub' || state.operation === 'mul' || state.operation === 'div' ? state.operation : 'add';
+
+  let a;
+  let b;
+  let answer;
+
+  if (op === 'mul') {
+    const r = factorRangeForLevel(state.level);
+    a = randInt(r.min, r.max);
+    b = randInt(r.min, r.max);
+    answer = a * b;
+  } else if (op === 'div') {
+    const { divisorMax, quotientMax } = divisionRangesForLevel(state.level);
+    const divisor = randInt(1, divisorMax);
+    const quotient = randInt(0, quotientMax);
+    a = divisor * quotient;
+    b = divisor;
+    answer = quotient;
+  } else {
+    const r = numberRangeForLevel(state.level);
+    a = randInt(r.min, r.max);
+    b = randInt(r.min, r.max);
+    if (op === 'sub' && b > a) {
+      const t = a;
+      a = b;
+      b = t;
+    }
+    answer = op === 'sub' ? a - b : a + b;
   }
 
-  const answer = op === 'sub' ? a - b : a + b;
   return {
     op,
     a,
@@ -346,7 +405,7 @@ function renderShell({ titleRight, content }) {
         h('div', { class: 'logo', 'aria-hidden': 'true' }),
         h('div', {}, [
           h('div', { class: 'h1', text: APP_NAME }),
-          h('div', { class: 'sub', text: 'Jeu de calcul mental (addition)' })
+          h('div', { class: 'sub', text: 'Jeu de calcul mental' })
         ])
       ]),
       h('div', { class: 'btn-row' }, [
@@ -398,6 +457,32 @@ function renderHome() {
         }, [
           h('div', { class: 'op-icon', text: '−' }),
           h('div', { class: 'op-label', text: 'Soustraction' })
+        ]),
+        h('button', {
+          class: `op-tile ${state.operation === 'mul' ? 'selected' : ''}`,
+          onclick: () => {
+            const s = loadState();
+            s.operation = 'mul';
+            saveState(s);
+            render();
+          },
+          'aria-label': 'Multiplication'
+        }, [
+          h('div', { class: 'op-icon', text: '×' }),
+          h('div', { class: 'op-label', text: 'Multiplication' })
+        ]),
+        h('button', {
+          class: `op-tile ${state.operation === 'div' ? 'selected' : ''}`,
+          onclick: () => {
+            const s = loadState();
+            s.operation = 'div';
+            saveState(s);
+            render();
+          },
+          'aria-label': 'Division'
+        }, [
+          h('div', { class: 'op-icon', text: '÷' }),
+          h('div', { class: 'op-label', text: 'Division' })
         ])
       ]),
       h('div', { class: 'btn-row' }, [
@@ -422,6 +507,31 @@ function renderSettings() {
         h('div', { class: 'card-inner grid' }, [
           h('div', { class: 'kids-big', text: 'Réglages' }),
           h('div', { class: 'sub', text: 'Réservé aux parents (ou avec un adulte).' }),
+          h('div', { class: 'sub', text: 'Thème' }),
+          h('div', { class: 'btn-row' }, [
+            h('button', {
+              class: `btn ${state.config.theme === 'dark' ? 'btn-primary' : 'btn-secondary'}`,
+              onclick: () => {
+                const s = loadState();
+                s.config.theme = 'dark';
+                saveState(s);
+                applyThemeFromState(s);
+                render();
+              },
+              text: 'Sombre'
+            }),
+            h('button', {
+              class: `btn ${state.config.theme === 'light' ? 'btn-primary' : 'btn-secondary'}`,
+              onclick: () => {
+                const s = loadState();
+                s.config.theme = 'light';
+                saveState(s);
+                applyThemeFromState(s);
+                render();
+              },
+              text: 'Clair'
+            })
+          ]),
           h('div', { class: 'stats' }, [
             stat('Questions', String(state.totals.played)),
             stat('Précision', `${Math.round(computeAccuracy(state.totals) * 100)}%`),
@@ -687,7 +797,7 @@ function renderPlay() {
       toast.textContent = `Tu as ${formatMs(timeLimitMs)} pour répondre.`;
     }
 
-    if (math) math.textContent = current.op === 'sub' ? `${current.a} − ${current.b}` : `${current.a} + ${current.b}`;
+    if (math) math.textContent = `${current.a} ${opSymbol(current.op)} ${current.b}`;
     if (input) {
       input.value = '';
       input.focus();
@@ -763,8 +873,8 @@ function renderPlay() {
     content: h('div', { class: 'grid' }, [
       h('div', { class: 'card sparkle', 'data-sparkle': '' }, [
         h('div', { class: 'card-inner grid' }, [
-          h('div', { class: 'sub', text: `Mode: ${state.operation === 'sub' ? 'Soustraction' : 'Addition'} • Une seule question. Pas de stress !` }),
-          h('div', { class: 'math', 'data-math': '', text: current.op === 'sub' ? `${current.a} − ${current.b}` : `${current.a} + ${current.b}` }),
+          h('div', { class: 'sub', text: `Mode: ${opLabel(state.operation)} • Une seule question. Pas de stress !` }),
+          h('div', { class: 'math', 'data-math': '', text: `${current.a} ${opSymbol(current.op)} ${current.b}` }),
           h('div', { class: 'progress' }, [h('div', { 'data-progress-inner': '' })]),
           h('input', {
             class: 'input',
@@ -816,6 +926,8 @@ function renderPlay() {
 
 function render() {
   const route = getRoute();
+
+  applyThemeFromState(loadState());
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').catch(() => {

@@ -7,6 +7,10 @@ const MIN_ALLOWED_MIN_TIME_MS = 1500;
 const DEFAULT_CONFIG = {
   soundOn: true,
   theme: 'dark',
+  maxAdd: 20,
+  maxSub: 20,
+  maxMul: 12,
+  maxDiv: 12,
   minTimeMs: 2200,
   startTimeMs: 5000,
   timeStepMs: 150,
@@ -58,6 +62,10 @@ function normalizeConfig(state) {
 
   const cfg = state.config;
   cfg.theme = cfg.theme === 'light' ? 'light' : 'dark';
+  cfg.maxAdd = clamp(Math.floor(Number(cfg.maxAdd) || DEFAULT_CONFIG.maxAdd), 1, 999);
+  cfg.maxSub = clamp(Math.floor(Number(cfg.maxSub) || DEFAULT_CONFIG.maxSub), 1, 999);
+  cfg.maxMul = clamp(Math.floor(Number(cfg.maxMul) || DEFAULT_CONFIG.maxMul), 1, 999);
+  cfg.maxDiv = clamp(Math.floor(Number(cfg.maxDiv) || DEFAULT_CONFIG.maxDiv), 1, 999);
   cfg.minTimeMs = clamp(Number(cfg.minTimeMs) || DEFAULT_CONFIG.minTimeMs, MIN_ALLOWED_MIN_TIME_MS, 60_000);
   cfg.startTimeMs = clamp(Number(cfg.startTimeMs) || DEFAULT_CONFIG.startTimeMs, cfg.minTimeMs, 120_000);
 }
@@ -158,6 +166,7 @@ function divisionRangesForLevel(level) {
 
 function generateQuestion(state) {
   const op = state.operation === 'sub' || state.operation === 'mul' || state.operation === 'div' ? state.operation : 'add';
+  const cfg = state.config || DEFAULT_CONFIG;
 
   let a;
   let b;
@@ -165,20 +174,29 @@ function generateQuestion(state) {
 
   if (op === 'mul') {
     const r = factorRangeForLevel(state.level);
-    a = randInt(r.min, r.max);
-    b = randInt(r.min, r.max);
+    const cap = Math.max(1, Number(cfg.maxMul) || DEFAULT_CONFIG.maxMul);
+    const max = Math.max(r.min, Math.min(r.max, cap));
+    a = randInt(r.min, max);
+    b = randInt(r.min, max);
     answer = a * b;
   } else if (op === 'div') {
     const { divisorMax, quotientMax } = divisionRangesForLevel(state.level);
-    const divisor = randInt(1, divisorMax);
-    const quotient = randInt(0, quotientMax);
+    const cap = Math.max(1, Number(cfg.maxDiv) || DEFAULT_CONFIG.maxDiv);
+    const divMax = Math.max(1, Math.min(divisorMax, cap));
+    const divisor = randInt(1, divMax);
+    const qMax = Math.max(0, Math.min(quotientMax, Math.floor(cap / divisor)));
+    const quotient = randInt(0, qMax);
     a = divisor * quotient;
     b = divisor;
     answer = quotient;
   } else {
     const r = numberRangeForLevel(state.level);
-    a = randInt(r.min, r.max);
-    b = randInt(r.min, r.max);
+    const cap = op === 'sub'
+      ? Math.max(1, Number(cfg.maxSub) || DEFAULT_CONFIG.maxSub)
+      : Math.max(1, Number(cfg.maxAdd) || DEFAULT_CONFIG.maxAdd);
+    const max = Math.max(r.min, Math.min(r.max, cap));
+    a = randInt(r.min, max);
+    b = randInt(r.min, max);
     if (op === 'sub' && b > a) {
       const t = a;
       a = b;
@@ -532,6 +550,43 @@ function renderSettings() {
               text: 'Clair'
             })
           ]),
+          h('div', { class: 'sub', text: 'Nombres max (plafonds)' }),
+          h('div', { class: 'sub', text: 'Addition (valeur max pour chaque nombre a et b)' }),
+          h('input', {
+            class: 'input',
+            type: 'number',
+            step: '1',
+            min: '1',
+            value: String(state.config.maxAdd),
+            'data-cap-add': ''
+          }),
+          h('div', { class: 'sub', text: 'Soustraction (valeur max pour chaque nombre a et b)' }),
+          h('input', {
+            class: 'input',
+            type: 'number',
+            step: '1',
+            min: '1',
+            value: String(state.config.maxSub),
+            'data-cap-sub': ''
+          }),
+          h('div', { class: 'sub', text: 'Multiplication (ex: 12 → au pire 12 × 12)' }),
+          h('input', {
+            class: 'input',
+            type: 'number',
+            step: '1',
+            min: '1',
+            value: String(state.config.maxMul),
+            'data-cap-mul': ''
+          }),
+          h('div', { class: 'sub', text: 'Division (plafond sur le dividende et le diviseur, divisions entières)' }),
+          h('input', {
+            class: 'input',
+            type: 'number',
+            step: '1',
+            min: '1',
+            value: String(state.config.maxDiv),
+            'data-cap-div': ''
+          }),
           h('div', { class: 'stats' }, [
             stat('Questions', String(state.totals.played)),
             stat('Précision', `${Math.round(computeAccuracy(state.totals) * 100)}%`),
@@ -598,9 +653,17 @@ function renderSettings() {
 
                 const minEl = document.querySelector('[data-min-time]');
                 const startEl = document.querySelector('[data-start-time]');
+                const capAddEl = document.querySelector('[data-cap-add]');
+                const capSubEl = document.querySelector('[data-cap-sub]');
+                const capMulEl = document.querySelector('[data-cap-mul]');
+                const capDivEl = document.querySelector('[data-cap-div]');
 
                 const minSec = Number(String(minEl?.value ?? '').replace(',', '.'));
                 const startSec = Number(String(startEl?.value ?? '').replace(',', '.'));
+                const capAdd = Math.floor(Number(String(capAddEl?.value ?? '').replace(',', '.')));
+                const capSub = Math.floor(Number(String(capSubEl?.value ?? '').replace(',', '.')));
+                const capMul = Math.floor(Number(String(capMulEl?.value ?? '').replace(',', '.')));
+                const capDiv = Math.floor(Number(String(capDivEl?.value ?? '').replace(',', '.')));
 
                 if (!Number.isFinite(minSec) || !Number.isFinite(startSec)) {
                   render();
@@ -612,6 +675,11 @@ function renderSettings() {
 
                 s.config.minTimeMs = clamp(minMs, MIN_ALLOWED_MIN_TIME_MS, 60_000);
                 s.config.startTimeMs = clamp(startMs, s.config.minTimeMs, 120_000);
+
+                if (Number.isFinite(capAdd)) s.config.maxAdd = clamp(capAdd, 1, 999);
+                if (Number.isFinite(capSub)) s.config.maxSub = clamp(capSub, 1, 999);
+                if (Number.isFinite(capMul)) s.config.maxMul = clamp(capMul, 1, 999);
+                if (Number.isFinite(capDiv)) s.config.maxDiv = clamp(capDiv, 1, 999);
 
                 saveState(s);
                 render();

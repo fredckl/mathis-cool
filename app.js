@@ -245,11 +245,14 @@ function generateQuestion(state) {
     const max = Math.max(r.min, Math.min(r.max, cap));
     a = randInt(r.min, max);
     b = randInt(r.min, max);
+    if (a === 0 && max >= 1) a = randInt(1, max);
+    if (b === 0 && max >= 1) b = randInt(1, max);
     if (op === 'sub' && b > a) {
       const t = a;
       a = b;
       b = t;
     }
+    if (op === 'sub' && b === 0 && max >= 1) b = randInt(1, max);
     answer = op === 'sub' ? a - b : a + b;
   }
 

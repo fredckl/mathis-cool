@@ -16,6 +16,7 @@ const DEFAULT_CONFIG = {
 
 const DEFAULT_STATE = {
   config: DEFAULT_CONFIG,
+  operation: 'add',
   level: 1,
   streak: 0,
   totals: {
@@ -63,6 +64,7 @@ function mergeState(base, incoming) {
   if (!incoming || typeof incoming !== 'object') return base;
   const out = base;
   if (incoming.config) out.config = { ...base.config, ...incoming.config };
+  if (incoming.operation === 'add' || incoming.operation === 'sub') out.operation = incoming.operation;
   if (typeof incoming.level === 'number') out.level = incoming.level;
   if (typeof incoming.streak === 'number') out.streak = incoming.streak;
   if (incoming.totals) out.totals = { ...base.totals, ...incoming.totals };
@@ -115,12 +117,22 @@ function randInt(min, max) {
 
 function generateQuestion(state) {
   const r = numberRangeForLevel(state.level);
-  const a = randInt(r.min, r.max);
-  const b = randInt(r.min, r.max);
+  let a = randInt(r.min, r.max);
+  let b = randInt(r.min, r.max);
+
+  const op = state.operation === 'sub' ? 'sub' : 'add';
+  if (op === 'sub' && b > a) {
+    const t = a;
+    a = b;
+    b = t;
+  }
+
+  const answer = op === 'sub' ? a - b : a + b;
   return {
+    op,
     a,
     b,
-    answer: a + b
+    answer
   };
 }
 
@@ -275,6 +287,29 @@ function renderHome() {
     h('div', { class: 'card-inner grid' }, [
       h('div', { class: 'kids-big', text: 'Prêt à jouer ?' }),
       h('div', { class: 'sub', text: 'Une question à la fois. Tu réponds vite, et tu progresses !' }),
+      h('div', { class: 'sub', text: 'Choisis ton jeu :' }),
+      h('div', { class: 'btn-row' }, [
+        h('button', {
+          class: `btn ${state.operation === 'add' ? 'btn-primary' : 'btn-secondary'}`,
+          onclick: () => {
+            const s = loadState();
+            s.operation = 'add';
+            saveState(s);
+            render();
+          },
+          text: 'Addition'
+        }),
+        h('button', {
+          class: `btn ${state.operation === 'sub' ? 'btn-primary' : 'btn-secondary'}`,
+          onclick: () => {
+            const s = loadState();
+            s.operation = 'sub';
+            saveState(s);
+            render();
+          },
+          text: 'Soustraction'
+        })
+      ]),
       h('div', { class: 'btn-row' }, [
         h('button', { class: 'btn btn-primary', onclick: () => setRoute('/play'), text: 'Jouer' }),
         h('button', { class: 'btn btn-secondary', onclick: () => setRoute('/progress'), text: 'Mes progrès' })
@@ -551,7 +586,7 @@ function renderPlay() {
       toast.textContent = `Tu as ${formatMs(timeLimitMs)} pour répondre.`;
     }
 
-    if (math) math.textContent = `${current.a} + ${current.b}`;
+    if (math) math.textContent = current.op === 'sub' ? `${current.a} − ${current.b}` : `${current.a} + ${current.b}`;
     if (input) {
       input.value = '';
       input.focus();
@@ -589,6 +624,7 @@ function renderPlay() {
 
     s.history.push({
       ts: now(),
+      op: current.op,
       a: current.a,
       b: current.b,
       correct,
@@ -626,8 +662,8 @@ function renderPlay() {
     content: h('div', { class: 'grid' }, [
       h('div', { class: 'card sparkle', 'data-sparkle': '' }, [
         h('div', { class: 'card-inner grid' }, [
-          h('div', { class: 'sub', text: 'Une seule question. Pas de stress !' }),
-          h('div', { class: 'math', 'data-math': '', text: `${current.a} + ${current.b}` }),
+          h('div', { class: 'sub', text: `Mode: ${state.operation === 'sub' ? 'Soustraction' : 'Addition'} • Une seule question. Pas de stress !` }),
+          h('div', { class: 'math', 'data-math': '', text: current.op === 'sub' ? `${current.a} − ${current.b}` : `${current.a} + ${current.b}` }),
           h('div', { class: 'progress' }, [h('div', { 'data-progress-inner': '' })]),
           h('input', {
             class: 'input',

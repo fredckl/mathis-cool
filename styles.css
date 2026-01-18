@@ -188,7 +188,7 @@ a {
 .op-label {
   font-weight: 900;
   font-size: 16px;
-  color: rgba(255, 255, 255, 0.84);
+  color: var(--text);
 }
 
 .btn-full {

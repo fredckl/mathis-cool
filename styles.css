@@ -471,3 +471,28 @@ canvas {
   font-weight: 800;
   font-size: 12px;
 }
+
+ .keypad {
+   display: grid;
+   gap: 10px;
+ }
+
+ .keypad-grid {
+   display: grid;
+   grid-template-columns: repeat(3, 1fr);
+   gap: 10px;
+ }
+
+ .keypad-btn {
+   padding: 16px 14px;
+   font-size: 18px;
+   border-radius: 16px;
+ }
+
+ .keypad-btn-wide {
+   grid-column: span 2;
+ }
+
+ .keypad .btn-success.keypad-btn-wide {
+   grid-column: span 3;
+ }

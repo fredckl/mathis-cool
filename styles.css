@@ -104,6 +104,13 @@ a {
   font-size: 12px;
 }
 
+.session-counter {
+  justify-self: end;
+  width: max-content;
+  font-size: 16px;
+  padding: 10px 14px;
+}
+
 .card {
   background: linear-gradient(
     180deg,

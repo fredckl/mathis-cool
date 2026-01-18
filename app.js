@@ -753,6 +753,8 @@ function renderPlay() {
   let progressRaf = null;
   let answered = false;
   let timeLimitMs = calcTimeLimitMs(state);
+  const sessionTotal = 10;
+  let sessionIndex = 1;
 
   function stopTimers() {
     if (timerId) window.clearTimeout(timerId);
@@ -781,6 +783,12 @@ function renderPlay() {
     }, timeLimitMs);
   }
 
+  function updateSessionCounter() {
+    const counter = page.querySelector('[data-session-counter]');
+    if (!counter) return;
+    counter.textContent = `Question ${sessionIndex} / ${sessionTotal}`;
+  }
+
   function nextQuestion() {
     const st = loadState();
     timeLimitMs = calcTimeLimitMs(st);
@@ -796,6 +804,8 @@ function renderPlay() {
       toast.className = 'toast';
       toast.textContent = `Tu as ${formatMs(timeLimitMs)} pour répondre.`;
     }
+
+    updateSessionCounter();
 
     if (math) math.textContent = `${current.a} ${opSymbol(current.op)} ${current.b}`;
     if (input) {
@@ -862,6 +872,24 @@ function renderPlay() {
 
     playTone({ on: s.config.soundOn, type: correct ? 'good' : 'bad' });
 
+    if (sessionIndex >= sessionTotal) {
+      const counter = page.querySelector('[data-session-counter]');
+      if (counter) counter.textContent = `Terminé ! ${sessionTotal} / ${sessionTotal}`;
+
+      const t = page.querySelector('[data-toast]');
+      if (t) {
+        t.className = 'toast good';
+        t.textContent = 'Bravo ! Partie terminée.';
+      }
+
+      window.setTimeout(() => {
+        setRoute('/progress');
+      }, 1200);
+      return;
+    }
+
+    sessionIndex += 1;
+
     const delayMs = correct ? 550 : 2500;
     window.setTimeout(() => {
       nextQuestion();
@@ -874,6 +902,7 @@ function renderPlay() {
       h('div', { class: 'card sparkle', 'data-sparkle': '' }, [
         h('div', { class: 'card-inner grid' }, [
           h('div', { class: 'sub', text: `Mode: ${opLabel(state.operation)} • Une seule question. Pas de stress !` }),
+          h('div', { class: 'badge session-counter', 'data-session-counter': '', text: `Question ${sessionIndex} / ${sessionTotal}` }),
           h('div', { class: 'math', 'data-math': '', text: `${current.a} ${opSymbol(current.op)} ${current.b}` }),
           h('div', { class: 'progress' }, [h('div', { 'data-progress-inner': '' })]),
           h('input', {
@@ -915,6 +944,7 @@ function renderPlay() {
   queueMicrotask(() => {
     const input = page.querySelector('[data-answer]');
     if (input) input.focus();
+    updateSessionCounter();
     scheduleTimeout();
   });
 

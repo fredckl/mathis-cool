@@ -1003,8 +1003,10 @@ function renderPlay() {
     const input = page.querySelector('[data-answer]');
     const toast = page.querySelector('[data-toast]');
     const sparkle = page.querySelector('[data-sparkle]');
+    const firework = page.querySelector('[data-firework]');
 
     if (sparkle) sparkle.classList.remove('on');
+    if (firework) firework.classList.remove('on');
     if (toast) {
       toast.className = 'toast';
       toast.textContent = `Tu as ${formatMs(timeLimitMs)} pour répondre.`;
@@ -1064,6 +1066,7 @@ function renderPlay() {
 
     const toast = page.querySelector('[data-toast]');
     const sparkle = page.querySelector('[data-sparkle]');
+    const firework = page.querySelector('[data-firework]');
 
     if (toast) {
       toast.className = `toast ${correct ? 'good' : 'bad'}`;
@@ -1073,6 +1076,11 @@ function renderPlay() {
     if (sparkle) {
       sparkle.classList.add('on');
       window.setTimeout(() => sparkle.classList.remove('on'), 520);
+    }
+
+    if (firework && correct) {
+      firework.classList.add('on');
+      window.setTimeout(() => firework.classList.remove('on'), 720);
     }
 
     playTone({ on: s.config.soundOn, type: correct ? 'good' : 'bad' });
@@ -1108,7 +1116,10 @@ function renderPlay() {
         h('div', { class: 'card-inner grid' }, [
           h('div', { class: 'sub', text: `Mode: ${opLabel(state.operation)} • Une seule question. Pas de stress !` }),
           h('div', { class: 'badge session-counter', 'data-session-counter': '', text: `Question ${sessionIndex} / ${sessionTotal}` }),
-          h('div', { class: 'math', 'data-math': '', text: `${current.a} ${opSymbol(current.op)} ${current.b}` }),
+          h('div', { class: 'question-line' }, [
+            h('div', { class: 'math', 'data-math': '', text: `${current.a} ${opSymbol(current.op)} ${current.b}` }),
+            h('div', { class: 'firework', 'data-firework': '', text: '🎆' })
+          ]),
           h('div', { class: 'progress' }, [h('div', { 'data-progress-inner': '' })]),
           h('input', {
             class: 'input',

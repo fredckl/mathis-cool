@@ -689,7 +689,7 @@ function renderPlay() {
 
     playTone({ on: s.config.soundOn, type: correct ? 'good' : 'bad' });
 
-    const delayMs = correct ? 550 : 1000;
+    const delayMs = correct ? 550 : 2500;
     window.setTimeout(() => {
       nextQuestion();
     }, delayMs);

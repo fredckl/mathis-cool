@@ -1,24 +1,28 @@
 :root {
-  --bg: #0b1020;
-  --card: rgba(255, 255, 255, 0.08);
-  --card-2: rgba(255, 255, 255, 0.12);
-  --text: rgba(255, 255, 255, 0.92);
-  --muted: rgba(255, 255, 255, 0.72);
-  --primary: #4f46e5;
-  --primary-2: #22c55e;
-  --danger: #ef4444;
-  --warning: #f59e0b;
-  --shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
+  --bg: #161133;
+  --card: rgba(255, 255, 255, 0.09);
+  --card-2: rgba(255, 255, 255, 0.13);
+  --text: rgba(255, 255, 255, 0.94);
+  --muted: rgba(255, 255, 255, 0.76);
+  --primary: #f472b6;
+  --primary-2: #60a5fa;
+  --danger: #fb7185;
+  --warning: #fdba74;
+  --bg-glow-1: rgba(244, 114, 182, 0.26);
+  --bg-glow-2: rgba(96, 165, 250, 0.22);
+  --shadow: 0 14px 40px rgba(10, 8, 24, 0.48);
   --radius: 20px;
 }
 
 html[data-theme='light'] {
-  --bg: #f4f6fb;
-  --card: rgba(0, 0, 0, 0.04);
-  --card-2: rgba(0, 0, 0, 0.06);
-  --text: rgba(10, 16, 32, 0.92);
-  --muted: rgba(10, 16, 32, 0.68);
-  --shadow: 0 14px 40px rgba(10, 16, 32, 0.12);
+  --bg: #fff3fa;
+  --card: rgba(19, 16, 40, 0.045);
+  --card-2: rgba(19, 16, 40, 0.07);
+  --text: rgba(19, 16, 40, 0.92);
+  --muted: rgba(19, 16, 40, 0.66);
+  --bg-glow-1: rgba(244, 114, 182, 0.22);
+  --bg-glow-2: rgba(96, 165, 250, 0.18);
+  --shadow: 0 14px 40px rgba(19, 16, 40, 0.12);
 }
 
 * {
@@ -194,8 +198,8 @@ a {
 }
 
 .op-tile.selected {
-  background: linear-gradient(135deg, rgba(79, 70, 229, 0.35), rgba(34, 197, 94, 0.25));
-  border-color: rgba(99, 102, 241, 0.65);
+  background: linear-gradient(135deg, rgba(244, 114, 182, 0.32), rgba(96, 165, 250, 0.26));
+  border-color: rgba(244, 114, 182, 0.72);
 }
 
 .op-icon {
@@ -235,8 +239,8 @@ a {
 .btn-primary {
   background: linear-gradient(
     135deg,
-    rgba(79, 70, 229, 0.95),
-    rgba(99, 102, 241, 0.9)
+    rgba(244, 114, 182, 0.96),
+    rgba(96, 165, 250, 0.92)
   );
   color: white;
 }
@@ -250,17 +254,17 @@ a {
 .btn-success {
   background: linear-gradient(
     135deg,
-    rgba(34, 197, 94, 0.95),
-    rgba(16, 185, 129, 0.9)
+    rgba(186, 230, 253, 0.96),
+    rgba(147, 197, 253, 0.94)
   );
-  color: #06210f;
+  color: rgba(19, 16, 40, 0.92);
 }
 
 .btn-danger {
   background: linear-gradient(
     135deg,
-    rgba(239, 68, 68, 0.95),
-    rgba(244, 63, 94, 0.9)
+    rgba(251, 113, 133, 0.95),
+    rgba(244, 114, 182, 0.92)
   );
   color: white;
 }
@@ -335,8 +339,8 @@ a {
  }
 
 .input:focus {
-  border-color: rgba(99, 102, 241, 0.7);
-  box-shadow: 0 0 0 5px rgba(99, 102, 241, 0.18);
+  border-color: rgba(244, 114, 182, 0.82);
+  box-shadow: 0 0 0 5px rgba(244, 114, 182, 0.16);
 }
 
 .progress {
@@ -353,8 +357,8 @@ a {
   width: 0%;
   background: linear-gradient(
     90deg,
-    rgba(34, 197, 94, 0.95),
-    rgba(245, 158, 11, 0.95)
+    rgba(96, 165, 250, 0.95),
+    rgba(244, 114, 182, 0.95)
   );
   transition: width 140ms linear;
 }

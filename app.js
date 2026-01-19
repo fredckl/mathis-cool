@@ -7,7 +7,7 @@ const MIN_ALLOWED_MIN_TIME_MS = 1500;
 
 const DEFAULT_CONFIG = {
   soundOn: true,
-  theme: 'dark',
+  theme: 'light',
   maxAdd: 20,
   maxSub: 20,
   maxMul: 12,

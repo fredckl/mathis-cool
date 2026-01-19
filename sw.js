@@ -1,4 +1,5 @@
-const CACHE_NAME = 'mathis-cool-v1.4';
+const VERSION = 'v1.5';
+const CACHE_NAME = 'mathis-cool-' + VERSION;
 
 const ASSETS = [
   '/',

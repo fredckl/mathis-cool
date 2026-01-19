@@ -1,4 +1,5 @@
 const APP_NAME = 'Mathis Cool';
+const APP_VERSION = 'v1.5';
 
 const STORAGE_KEY = 'mathis_cool_state_v1';
 
@@ -511,7 +512,7 @@ function renderShell({ titleRight, content }) {
     ]),
     content,
     h('div', { class: 'footer' }, [
-      h('div', { text: 'Hors ligne • Sans pub • Données locales' }),
+      h('div', { text: `Hors ligne • Sans pub • Données locales • ${APP_VERSION}` }),
       h('a', { href: '#/', text: 'Accueil' })
     ])
   ]);

@@ -852,6 +852,23 @@ function renderProgress() {
   const avg = computeAvgTimeMs(state.totals);
   const acc = computeAccuracy(state.totals);
 
+  function progressRow(label, value, max, pct, detail) {
+    const p = clamp(Number.isFinite(pct) ? pct : 0, 0, 1);
+    const w = `${Math.round(p * 100)}%`;
+    const d = detail ?? `${value} / ${max}`;
+    return h('div', { class: 'progress-row' }, [
+      h('div', { class: 'k', text: label }),
+      h('div', { class: 'progress progress-meter' }, [
+        h('div', { class: 'progress-fill', style: `width: ${w};` }, []),
+        h('div', { class: 'progress-label', text: d })
+      ])
+    ]);
+  }
+
+  const maxBadges = 6;
+  const nextStarSteps = 5;
+  const nextStar = state.totals.correct % nextStarSteps;
+
   const summary = h('div', { class: 'card' }, [
     h('div', { class: 'card-inner grid' }, [
       h('div', { class: 'kids-big', text: 'Mes progrès' }),
@@ -862,6 +879,40 @@ function renderProgress() {
         stat('Niveau', String(state.level))
       ]),
       h('div', { class: 'toast', text: `Précision: ${Math.round(acc * 100)}% • Étoiles: ${state.rewards.stars}` })
+    ])
+  ]);
+
+  const progressBars = h('div', { class: 'card' }, [
+    h('div', { class: 'card-inner grid' }, [
+      h('div', { class: 'sub', text: 'Barres' }),
+      progressRow(
+        'Précision',
+        state.totals.correct,
+        Math.max(1, state.totals.played),
+        acc,
+        `${Math.round(acc * 100)}% (${state.totals.correct} / ${state.totals.played})`
+      ),
+      progressRow(
+        'Niveau',
+        state.level,
+        state.config.levelMax,
+        state.config.levelMax ? state.level / state.config.levelMax : 0,
+        `${state.level} / ${state.config.levelMax}`
+      ),
+      progressRow(
+        'Prochaine étoile',
+        nextStar,
+        nextStarSteps,
+        nextStar / nextStarSteps,
+        `${nextStar} / ${nextStarSteps}`
+      ),
+      progressRow(
+        'Badges',
+        state.rewards.badges.length,
+        maxBadges,
+        state.rewards.badges.length / maxBadges,
+        `${state.rewards.badges.length} / ${maxBadges}`
+      )
     ])
   ]);
 
@@ -886,7 +937,7 @@ function renderProgress() {
 
   const page = renderShell({
     titleRight: h('button', { class: 'btn btn-secondary', onclick: () => setRoute('/'), text: 'Retour' }),
-    content: h('div', { class: 'grid grid-2' }, [summary, rewards, graphCard])
+    content: h('div', { class: 'grid grid-2' }, [summary, rewards, progressBars, graphCard])
   });
 
   queueMicrotask(() => drawChart(state));
@@ -1193,7 +1244,7 @@ function renderPlay() {
             h('div', { class: 'math', 'data-math': '', text: `${current.a} ${opSymbol(current.op)} ${current.b}` }),
             h('div', { class: 'firework', 'data-firework': '', text: '🎆' })
           ]),
-          h('div', { class: 'progress' }, [h('div', { 'data-progress-inner': '' })]),
+          h('div', { class: 'progress' }, [h('div', { class: 'progress-fill', 'data-progress-inner': '' })]),
           h('form', {
             class: 'answer-form',
             onsubmit: (e) => {

@@ -1254,14 +1254,12 @@ function renderPlay() {
           }, [
             h('input', {
               class: 'input',
-              inputmode: 'none',
+              inputmode: 'numeric',
               pattern: '[0-9]*',
-              readonly: '',
               autocomplete: 'off',
               autocapitalize: 'off',
               autocorrect: 'off',
               spellcheck: 'false',
-              onpointerdown: (e) => e.preventDefault(),
               placeholder: 'Ta réponse',
               'data-answer': ''
             }),

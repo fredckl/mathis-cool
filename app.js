@@ -1067,7 +1067,10 @@ function renderPlay() {
     const firework = page.querySelector('[data-firework]');
 
     if (sparkle) sparkle.classList.remove('on');
-    if (firework) firework.classList.remove('on');
+    if (firework) {
+      firework.classList.remove('on');
+      firework.textContent = '🎆';
+    }
     if (toast) {
       toast.className = 'toast';
       toast.textContent = `Tu as ${formatMs(timeLimitMs)} pour répondre.`;
@@ -1140,9 +1143,15 @@ function renderPlay() {
       window.setTimeout(() => sparkle.classList.remove('on'), 520);
     }
 
-    if (firework && correct) {
-      firework.classList.add('on');
-      window.setTimeout(() => firework.classList.remove('on'), 720);
+    if (firework) {
+      if (correct) {
+        firework.textContent = '🎆';
+        firework.classList.add('on');
+        window.setTimeout(() => firework.classList.remove('on'), 720);
+      } else {
+        firework.textContent = `= ${current.answer}`;
+        firework.classList.add('on');
+      }
     }
 
     playTone({ on: s.config.soundOn, type: correct ? 'good' : 'bad' });

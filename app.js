@@ -996,7 +996,12 @@ function renderPlay() {
 
   function keepFocus() {
     const input = getAnswerInput();
-    if (input) input.focus();
+    if (!input) return;
+    try {
+      input.focus({ preventScroll: true });
+    } catch {
+      input.focus();
+    }
   }
 
   function appendDigit(d) {
@@ -1186,8 +1191,14 @@ function renderPlay() {
           }, [
             h('input', {
               class: 'input',
-              inputmode: 'numeric',
+              inputmode: 'none',
               pattern: '[0-9]*',
+              readonly: '',
+              autocomplete: 'off',
+              autocapitalize: 'off',
+              autocorrect: 'off',
+              spellcheck: 'false',
+              onpointerdown: (e) => e.preventDefault(),
               placeholder: 'Ta réponse',
               'data-answer': ''
             }),

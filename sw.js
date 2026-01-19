@@ -1,9 +1,12 @@
-const VERSION = 'v1.7';
+importScripts('/version.js');
+
+const VERSION = self.__MATHIS_COOL_VERSION__ || 'v0';
 const CACHE_NAME = 'mathis-cool-' + VERSION;
 
 const ASSETS = [
   '/',
   '/index.html',
+  '/version.js',
   '/styles.css',
   '/app.js',
   '/favicon.svg',

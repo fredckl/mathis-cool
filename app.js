@@ -1,5 +1,5 @@
 const APP_NAME = 'Mathis Cool';
-const APP_VERSION = 'v1.5';
+const APP_VERSION = (typeof window !== 'undefined' && window.__MATHIS_COOL_VERSION__) ? window.__MATHIS_COOL_VERSION__ : 'v0';
 
 const STORAGE_KEY = 'mathis_cool_state_v1';
 

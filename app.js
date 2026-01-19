@@ -1256,10 +1256,17 @@ function renderPlay() {
               class: 'input',
               inputmode: 'numeric',
               pattern: '[0-9]*',
+              enterkeyhint: 'done',
               autocomplete: 'off',
               autocapitalize: 'off',
               autocorrect: 'off',
               spellcheck: 'false',
+              onkeydown: (e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  submitAnswer();
+                }
+              },
               placeholder: 'Ta réponse',
               'data-answer': ''
             }),

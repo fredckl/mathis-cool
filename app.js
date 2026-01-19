@@ -675,6 +675,7 @@ function renderSettings() {
       h('div', { class: 'card' }, [
         h('div', { class: 'card-inner grid' }, [
           h('div', { class: 'sub', text: 'Personnalisation du temps (en secondes)' }),
+          h('div', { class: 'sub', text: 'Temps minimum (limite basse)' }),
           h('input', {
             class: 'input',
             type: 'number',
@@ -698,6 +699,7 @@ function renderSettings() {
               }
             }
           }),
+          h('div', { class: 'sub', text: 'Temps de départ (limite haute)' }),
           h('input', {
             class: 'input',
             type: 'number',

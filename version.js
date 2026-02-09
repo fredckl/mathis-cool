@@ -1,1 +1,1 @@
-globalThis.__MATHIS_COOL_VERSION__ = 'v1.13';
+globalThis.__MATHIS_COOL_VERSION__ = 'v1.14';

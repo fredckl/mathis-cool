@@ -327,7 +327,6 @@ const ENCOURAGING = [
   'Tu es courageux, continue !',
   'Ça arrive à tout le monde !',
   'On apprend en jouant.',
-  'Tu peux être fier de toi.',
   'Encore un petit effort !',
   'Tu vas y arriver, j’en suis sûr.',
   'On passe à la suite, sans stress.'
@@ -1268,6 +1267,9 @@ function renderPlay() {
             h('div', { class: 'math', 'data-math': '', text: `${current.a} ${opSymbol(current.op)} ${current.b}` }),
             h('div', { class: 'firework', 'data-firework': '', text: '🎆' })
           ]),
+          h('div', { class: 'feedback-slot' }, [
+            h('div', { class: 'toast', 'data-toast': '', text: `Tu as ${formatMs(timeLimitMs)} pour répondre.` })
+          ]),
           h('div', { class: 'progress' }, [h('div', { class: 'progress-fill', 'data-progress-inner': '' })]),
           h('form', {
             class: 'answer-form',
@@ -1348,8 +1350,7 @@ function renderPlay() {
           ]),
           h('div', { class: 'btn-row' }, [
             h('button', { class: 'btn btn-secondary', onclick: () => setRoute('/'), text: 'Quitter' })
-          ]),
-          h('div', { class: 'toast', 'data-toast': '', text: `Tu as ${formatMs(timeLimitMs)} pour répondre.` })
+          ])
         ])
       ])
     ])

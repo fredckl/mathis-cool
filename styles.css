@@ -373,6 +373,18 @@ a {
   gap: 10px;
 }
 
+.feedback-slot {
+  min-height: 48px;
+  display: grid;
+  align-items: center;
+}
+
+.feedback-slot .toast {
+  margin: 0;
+  font-size: 14px;
+  padding: 10px 12px;
+}
+
 .math {
   font-size: clamp(54px, 6vw, 78px);
   font-weight: 1000;

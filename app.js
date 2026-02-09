@@ -71,6 +71,22 @@ const DEVICE = typeof window !== 'undefined' ? detectDevice() : { kind: 'desktop
 let fireworkTimerId = null;
 let flashTimerId = null;
 
+function stopFx() {
+  if (fireworkTimerId) window.clearTimeout(fireworkTimerId);
+  fireworkTimerId = null;
+  if (flashTimerId) window.clearTimeout(flashTimerId);
+  flashTimerId = null;
+
+  try {
+    const fireworkLayer = document.querySelector('[data-fx-firework]');
+    if (fireworkLayer) fireworkLayer.classList.remove('on');
+    const flashLayer = document.querySelector('[data-fx-flash]');
+    if (flashLayer) flashLayer.classList.remove('on');
+  } catch {
+    // ignore
+  }
+}
+
 function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -1148,19 +1164,45 @@ function renderPlay() {
   let timeLimitMs = calcTimeLimitMs(state);
   const sessionTotal = 10;
   let sessionIndex = 1;
+  let isActive = true;
+  const pendingTimeoutIds = new Set();
+
+  function setTimeoutTracked(fn, ms) {
+    const id = window.setTimeout(() => {
+      pendingTimeoutIds.delete(id);
+      if (!isActive) return;
+      fn();
+    }, ms);
+    pendingTimeoutIds.add(id);
+    return id;
+  }
+
+  function clearPendingTimeouts() {
+    for (const id of pendingTimeoutIds) window.clearTimeout(id);
+    pendingTimeoutIds.clear();
+  }
+
+  function cleanupOnExit() {
+    if (!isActive) return;
+    isActive = false;
+    stopTimers();
+    clearPendingTimeouts();
+    stopFx();
+  }
 
   function getAnswerInput() {
     return page?.querySelector?.('[data-answer]') || null;
   }
 
   function submitAnswer() {
+    if (!isActive) return;
     const input = getAnswerInput();
     const raw = String(input?.value ?? '').trim();
     const v = raw === '' ? null : Number(raw);
     const ok = v !== null && Number.isFinite(v) && v === current.answer;
     onAnswered({ correct: ok, value: v !== null && Number.isFinite(v) ? v : null, timedOut: false });
     keepFocus();
-    window.setTimeout(keepFocus, 0);
+    setTimeoutTracked(keepFocus, 0);
   }
 
   function keepFocus() {
@@ -1197,6 +1239,7 @@ function renderPlay() {
   }
 
   function scheduleTimeout() {
+    if (!isActive) return;
     stopTimers();
     startedAt = now();
     answered = false;
@@ -1211,6 +1254,7 @@ function renderPlay() {
     progressRaf = requestAnimationFrame(tick);
 
     timerId = window.setTimeout(() => {
+      if (!isActive) return;
       if (answered) return;
       onAnswered({ correct: false, value: null, timedOut: true });
     }, timeLimitMs);
@@ -1223,6 +1267,7 @@ function renderPlay() {
   }
 
   function nextQuestion() {
+    if (!isActive) return;
     const st = loadState();
     timeLimitMs = calcTimeLimitMs(st);
     current = pickNextQuestion(st);
@@ -1255,6 +1300,7 @@ function renderPlay() {
   }
 
   function onAnswered({ correct, value, timedOut }) {
+    if (!isActive) return;
     if (answered) return;
     answered = true;
     stopTimers();
@@ -1307,7 +1353,7 @@ function renderPlay() {
 
     if (sparkle) {
       sparkle.classList.add('on');
-      window.setTimeout(() => sparkle.classList.remove('on'), 520);
+      setTimeoutTracked(() => sparkle.classList.remove('on'), 520);
     }
 
     if (answerReveal) {
@@ -1328,7 +1374,7 @@ function renderPlay() {
 
     playTone({ on: s.config.soundOn, type: correct ? 'good' : 'bad' });
 
-    window.setTimeout(keepFocus, 0);
+    setTimeoutTracked(keepFocus, 0);
 
     if (sessionIndex >= sessionTotal) {
       const counter = page.querySelector('[data-session-counter]');
@@ -1340,7 +1386,7 @@ function renderPlay() {
         t.textContent = 'Bravo ! Partie terminée.';
       }
 
-      window.setTimeout(() => {
+      setTimeoutTracked(() => {
         setRoute('/progress');
       }, 1200);
       return;
@@ -1349,7 +1395,7 @@ function renderPlay() {
     sessionIndex += 1;
 
     const delayMs = correct ? 550 : 2500;
-    window.setTimeout(() => {
+    setTimeoutTracked(() => {
       nextQuestion();
     }, delayMs);
   }
@@ -1447,7 +1493,14 @@ function renderPlay() {
             ])
           ]),
           h('div', { class: 'btn-row' }, [
-            h('button', { class: 'btn btn-secondary', onclick: () => setRoute('/'), text: 'Quitter' })
+            h('button', {
+              class: 'btn btn-secondary',
+              onclick: () => {
+                cleanupOnExit();
+                setRoute('/');
+              },
+              text: 'Quitter'
+            })
           ])
         ])
       ])
@@ -1456,6 +1509,7 @@ function renderPlay() {
   });
 
   queueMicrotask(() => {
+    if (!isActive) return;
     const sparkleCard = page.querySelector('.card.sparkle');
     if (sparkleCard) {
       try {
@@ -1478,7 +1532,7 @@ function renderPlay() {
   });
 
   // cleanup if route changes
-  window.addEventListener('hashchange', stopTimers, { once: true });
+  window.addEventListener('hashchange', cleanupOnExit, { once: true });
 
   return page;
 }

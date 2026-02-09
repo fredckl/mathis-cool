@@ -5,6 +5,12 @@
   "display": "standalone",
   "icons": [
     {
+      "src": "/favicon.png",
+      "sizes": "200x200",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
       "src": "/favicon.svg",
       "sizes": "any",
       "type": "image/svg+xml",

@@ -18,7 +18,7 @@
   --progress-label-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
 }
 
-html[data-theme='light'] {
+html[data-theme="light"] {
   --bg: #fff3fa;
   --card: rgba(19, 16, 40, 0.045);
   --card-2: rgba(19, 16, 40, 0.07);
@@ -192,13 +192,14 @@ a {
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(255, 255, 255, 0.08);
   color: var(--text);
-  box-shadow: 0 10px 28px rgba(0,0,0,0.25);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.25);
   cursor: pointer;
   display: grid;
   place-items: center;
   padding: 12px;
   gap: 10px;
-  transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+  transition: transform 120ms ease, background 120ms ease,
+    border-color 120ms ease;
 }
 
 .op-tile:active {
@@ -206,7 +207,11 @@ a {
 }
 
 .op-tile.selected {
-  background: linear-gradient(135deg, rgba(244, 114, 182, 0.32), rgba(96, 165, 250, 0.26));
+  background: linear-gradient(
+    135deg,
+    rgba(244, 114, 182, 0.32),
+    rgba(96, 165, 250, 0.26)
+  );
   border-color: rgba(244, 114, 182, 0.72);
 }
 
@@ -290,12 +295,12 @@ a {
   line-height: 1.4;
 }
 
- .question-line {
+.question-line {
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
   gap: 10px;
- }
+}
 
 .math {
   font-size: clamp(54px, 6vw, 78px);
@@ -304,21 +309,21 @@ a {
   text-align: center;
 }
 
- .firework {
+.firework {
   font-size: 40px;
   line-height: 1;
   opacity: 0;
   transform: scale(0.9);
   transition: opacity 160ms ease, transform 160ms ease;
   user-select: none;
- }
+}
 
- .firework.on {
+.firework.on {
   opacity: 1;
   transform: scale(1);
- }
+}
 
- .submit-hidden {
+.submit-hidden {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -328,7 +333,7 @@ a {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
- }
+}
 
 .input {
   width: 100%;
@@ -341,10 +346,10 @@ a {
   outline: none;
 }
 
- .answer-form {
+.answer-form {
   display: grid;
   gap: 12px;
- }
+}
 
 .input:focus {
   border-color: rgba(244, 114, 182, 0.82);
@@ -547,37 +552,33 @@ canvas {
   font-size: 12px;
 }
 
- .keypad {
-   display: grid;
-   gap: 10px;
- }
+.keypad {
+  display: grid;
+  gap: 10px;
+}
 
- .keypad-grid {
-   display: grid;
-   grid-template-columns: repeat(3, 1fr);
-   gap: 10px;
- }
+.keypad-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
 
- .keypad-btn {
-   padding: 16px 14px;
-   font-size: 18px;
-   border-radius: 16px;
- }
+.keypad-btn {
+  padding: 16px 14px;
+  font-size: 18px;
+  border-radius: 16px;
+}
 
- .keypad-btn-wide {
-   grid-column: span 2;
- }
+.keypad-btn-wide {
+  grid-column: span 2;
+}
 
- .keypad .btn-success.keypad-btn-wide {
-   grid-column: span 3;
- }
+.keypad .btn-success.keypad-btn-wide {
+  grid-column: span 3;
+}
 
- @media (max-width: 760px) {
-   .keypad-grid .keypad-btn {
-     display: none;
-   }
-
-   .keypad-grid .keypad-verify {
-     display: block;
-   }
- }
+@media (max-width: 760px) {
+  .keypad-grid .keypad-btn {
+    display: block;
+  }
+}

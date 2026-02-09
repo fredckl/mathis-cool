@@ -45,6 +45,29 @@ function now() {
   return Date.now();
 }
 
+function detectDevice() {
+  const ua = String(navigator?.userAgent || '');
+  const isIOS = /iPad|iPhone|iPod/i.test(ua);
+  const isAndroid = /Android/i.test(ua);
+  const isCoarsePointer = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+    ? window.matchMedia('(pointer: coarse)').matches
+    : false;
+  const isTouch = isCoarsePointer || (typeof window !== 'undefined' && 'ontouchstart' in window);
+
+  let kind = 'desktop';
+  if (isTouch || isIOS || isAndroid) kind = 'mobile';
+
+  return {
+    kind,
+    isTouch,
+    isIOS,
+    isAndroid,
+    shouldAvoidNativeKeyboard: isTouch || isIOS || isAndroid
+  };
+}
+
+const DEVICE = typeof window !== 'undefined' ? detectDevice() : { kind: 'desktop', shouldAvoidNativeKeyboard: false };
+
 function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -1051,6 +1074,7 @@ function renderPlay() {
   function keepFocus() {
     const input = getAnswerInput();
     if (!input) return;
+    if (DEVICE.shouldAvoidNativeKeyboard) return;
     try {
       input.focus({ preventScroll: true });
     } catch {
@@ -1132,7 +1156,7 @@ function renderPlay() {
     if (math) math.textContent = `${current.a} ${opSymbol(current.op)} ${current.b}`;
     if (input) {
       input.value = '';
-      input.focus();
+      keepFocus();
     }
 
     scheduleTimeout();
@@ -1254,18 +1278,38 @@ function renderPlay() {
           }, [
             h('input', {
               class: 'input',
-              inputmode: 'numeric',
+              readonly: '',
+              inputmode: 'none',
               pattern: '[0-9]*',
               enterkeyhint: 'done',
               autocomplete: 'off',
               autocapitalize: 'off',
               autocorrect: 'off',
               spellcheck: 'false',
-              onkeydown: (e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  submitAnswer();
+              onbeforeinput: (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              },
+              onpaste: (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              },
+              ondrop: (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              },
+              onfocus: (e) => {
+                if (DEVICE.shouldAvoidNativeKeyboard) {
+                  try {
+                    e.currentTarget.blur();
+                  } catch {
+                    // ignore
+                  }
                 }
+              },
+              onkeydown: (e) => {
+                e.preventDefault();
+                e.stopPropagation();
               },
               placeholder: 'Ta réponse',
               'data-answer': ''
@@ -1313,7 +1357,7 @@ function renderPlay() {
 
   queueMicrotask(() => {
     const input = page.querySelector('[data-answer]');
-    if (input) input.focus();
+    if (input) keepFocus();
     updateSessionCounter();
     scheduleTimeout();
   });

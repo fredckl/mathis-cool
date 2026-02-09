@@ -223,6 +223,36 @@ function randInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+const ZERO_FACTOR_BIAS = {
+  mul: {
+    cooldown: 0,
+    probability: 0.15,
+    cooldownMin: 3,
+    cooldownMax: 6
+  }
+};
+
+function pickMultiplicationFactor(range) {
+  const limiter = ZERO_FACTOR_BIAS.mul;
+  const zeroAllowed = range.min <= 0 && range.max >= 0 && limiter.cooldown <= 0;
+
+  if (zeroAllowed && Math.random() < limiter.probability) {
+    limiter.cooldown = randInt(limiter.cooldownMin, limiter.cooldownMax);
+    return 0;
+  }
+
+  if (limiter.cooldown > 0) {
+    limiter.cooldown -= 1;
+  }
+
+  const minNonZero = Math.max(1, range.min);
+  if (minNonZero > range.max) {
+    return range.max;
+  }
+
+  return randInt(minNonZero, range.max);
+}
+
 function opSymbol(op) {
   if (op === 'sub') return '−';
   if (op === 'mul') return '×';
@@ -269,8 +299,9 @@ function generateQuestion(state) {
     const r = factorRangeForLevel(state.level);
     const cap = Math.max(1, Number(cfg.maxMul) || DEFAULT_CONFIG.maxMul);
     const max = Math.max(r.min, Math.min(r.max, cap));
-    a = randInt(r.min, max);
-    b = randInt(r.min, max);
+    const range = { min: r.min, max };
+    a = pickMultiplicationFactor(range);
+    b = pickMultiplicationFactor(range);
     answer = a * b;
   } else if (op === 'div') {
     const { divisorMax, quotientMax } = divisionRangesForLevel(state.level);

@@ -502,7 +502,7 @@ function triggerFlashFx() {
   }, 400);
 }
 
-function renderShell({ titleRight, content }) {
+function renderShell({ titleRight, content, disableNav = false }) {
   const state = loadState();
 
   const soundToggle = h('div', {
@@ -518,21 +518,37 @@ function renderShell({ titleRight, content }) {
     h('div', { class: 'sub', text: state.config.soundOn ? 'Sons: ON' : 'Sons: OFF' })
   ]);
 
-  const progressButton = h('button', {
+  const progressAttrs = {
     class: 'btn btn-secondary',
-    onclick: () => setRoute('/progress'),
     'aria-label': 'Mes progrès',
     title: 'Mes progrès'
-  }, [
+  };
+  if (disableNav) {
+    progressAttrs.disabled = '';
+    progressAttrs['aria-disabled'] = 'true';
+  } else {
+    progressAttrs.onclick = () => setRoute('/progress');
+    progressAttrs['aria-disabled'] = 'false';
+  }
+
+  const progressButton = h('button', progressAttrs, [
     h('span', { text: 'Mes progrès' })
   ]);
 
-  const settingsButton = h('button', {
+  const settingsAttrs = {
     class: 'btn btn-secondary',
-    onclick: () => setRoute('/settings'),
     'aria-label': 'Réglages',
     title: 'Réglages'
-  }, [
+  };
+  if (disableNav) {
+    settingsAttrs.disabled = '';
+    settingsAttrs['aria-disabled'] = 'true';
+  } else {
+    settingsAttrs.onclick = () => setRoute('/settings');
+    settingsAttrs['aria-disabled'] = 'false';
+  }
+
+  const settingsButton = h('button', settingsAttrs, [
     h('span', {
       'aria-hidden': 'true',
       style: 'display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;'
@@ -1404,7 +1420,8 @@ function renderPlay() {
           ])
         ])
       ])
-    ])
+    ]),
+    disableNav: true
   });
 
   queueMicrotask(() => {

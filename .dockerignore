@@ -5,3 +5,5 @@ npm-debug.log
 dist
 DOCUMENTATION.md
 publish-docker.sh
+portainer.yaml
+PROMPT.md

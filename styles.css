@@ -39,7 +39,7 @@ html[data-theme="light"] {
 
 html,
 body {
-  height: 100%;
+  max-height: 100%;
   margin: 0;
   font-family: ui-rounded, system-ui, -apple-system, Segoe UI, Roboto, Arial,
     sans-serif;
@@ -67,6 +67,62 @@ a {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.fx-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 20;
+}
+
+.fx-firework {
+  background: radial-gradient(circle at 20% 20%, rgba(244, 114, 182, 0.35), transparent 45%),
+    radial-gradient(circle at 70% 30%, rgba(96, 165, 250, 0.35), transparent 45%),
+    radial-gradient(circle at 40% 70%, rgba(34, 197, 94, 0.3), transparent 40%),
+    radial-gradient(circle at 80% 80%, rgba(250, 204, 21, 0.25), transparent 45%);
+  mix-blend-mode: screen;
+  transform: scale(1);
+}
+
+.fx-firework.on {
+  animation: firework-pop 1.2s ease forwards;
+}
+
+.fx-flash {
+  background: rgba(255, 255, 255, 0.65);
+}
+
+.fx-flash.on {
+  animation: flash-pop 0.4s ease forwards;
+}
+
+@keyframes firework-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  20% {
+    opacity: 0.95;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes flash-pop {
+  0% {
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.65;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 
 .shell {

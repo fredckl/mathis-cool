@@ -68,6 +68,9 @@ function detectDevice() {
 
 const DEVICE = typeof window !== 'undefined' ? detectDevice() : { kind: 'desktop', shouldAvoidNativeKeyboard: false };
 
+let fireworkTimerId = null;
+let flashTimerId = null;
+
 function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -454,6 +457,49 @@ function getRoute() {
 function mount(node) {
   const root = document.getElementById('app');
   root.replaceChildren(node);
+}
+
+function ensureFxLayers() {
+  if (typeof document === 'undefined') return;
+  if (document.querySelector('[data-fx-firework]')) return;
+
+  const firework = document.createElement('div');
+  firework.className = 'fx-layer fx-firework';
+  firework.setAttribute('aria-hidden', 'true');
+  firework.dataset.fxFirework = '';
+
+  const flash = document.createElement('div');
+  flash.className = 'fx-layer fx-flash';
+  flash.setAttribute('aria-hidden', 'true');
+  flash.dataset.fxFlash = '';
+
+  document.body.append(firework, flash);
+}
+
+function triggerFireworkFx() {
+  ensureFxLayers();
+  const layer = document.querySelector('[data-fx-firework]');
+  if (!layer) return;
+  layer.classList.remove('on');
+  void layer.offsetWidth;
+  layer.classList.add('on');
+  if (fireworkTimerId) window.clearTimeout(fireworkTimerId);
+  fireworkTimerId = window.setTimeout(() => {
+    layer.classList.remove('on');
+  }, 1200);
+}
+
+function triggerFlashFx() {
+  ensureFxLayers();
+  const layer = document.querySelector('[data-fx-flash]');
+  if (!layer) return;
+  layer.classList.remove('on');
+  void layer.offsetWidth;
+  layer.classList.add('on');
+  if (flashTimerId) window.clearTimeout(flashTimerId);
+  flashTimerId = window.setTimeout(() => {
+    layer.classList.remove('on');
+  }, 400);
 }
 
 function renderShell({ titleRight, content }) {
@@ -1138,12 +1184,12 @@ function renderPlay() {
     const input = page.querySelector('[data-answer]');
     const toast = page.querySelector('[data-toast]');
     const sparkle = page.querySelector('[data-sparkle]');
-    const firework = page.querySelector('[data-firework]');
+    const answerReveal = page.querySelector('[data-answer-reveal]');
 
     if (sparkle) sparkle.classList.remove('on');
-    if (firework) {
-      firework.classList.remove('on');
-      firework.textContent = '🎆';
+    if (answerReveal) {
+      answerReveal.textContent = '';
+      answerReveal.classList.remove('show');
     }
     if (toast) {
       toast.className = 'toast';
@@ -1205,7 +1251,7 @@ function renderPlay() {
 
     const toast = page.querySelector('[data-toast]');
     const sparkle = page.querySelector('[data-sparkle]');
-    const firework = page.querySelector('[data-firework]');
+    const answerReveal = page.querySelector('[data-answer-reveal]');
 
     if (toast) {
       toast.className = `toast ${correct ? 'good' : 'bad'}`;
@@ -1217,15 +1263,20 @@ function renderPlay() {
       window.setTimeout(() => sparkle.classList.remove('on'), 520);
     }
 
-    if (firework) {
+    if (answerReveal) {
       if (correct) {
-        firework.textContent = '🎆';
-        firework.classList.add('on');
-        window.setTimeout(() => firework.classList.remove('on'), 720);
+        answerReveal.textContent = '';
+        answerReveal.classList.remove('show');
       } else {
-        firework.textContent = `= ${current.answer}`;
-        firework.classList.add('on');
+        answerReveal.textContent = `= ${current.answer}`;
+        answerReveal.classList.add('show');
       }
+    }
+
+    if (correct) {
+      triggerFireworkFx();
+    } else {
+      triggerFlashFx();
     }
 
     playTone({ on: s.config.soundOn, type: correct ? 'good' : 'bad' });
@@ -1265,7 +1316,7 @@ function renderPlay() {
           h('div', { class: 'badge session-counter', 'data-session-counter': '', text: `Question ${sessionIndex} / ${sessionTotal}` }),
           h('div', { class: 'question-line' }, [
             h('div', { class: 'math', 'data-math': '', text: `${current.a} ${opSymbol(current.op)} ${current.b}` }),
-            h('div', { class: 'firework', 'data-firework': '', text: '🎆' })
+            h('div', { class: 'answer-reveal', 'data-answer-reveal': '', text: '' })
           ]),
           h('div', { class: 'feedback-slot' }, [
             h('div', { class: 'toast', 'data-toast': '', text: `Tu as ${formatMs(timeLimitMs)} pour répondre.` })

@@ -526,7 +526,7 @@ function renderShell({ titleRight, content }) {
           h('div', { class: 'sub', text: 'Jeu de calcul mental' })
         ])
       ]),
-      h('div', { class: 'btn-row' }, [
+      h('div', { class: 'btn-row header-controls' }, [
         titleRight || levelStarsBadge(state),
         progressButton,
         soundToggle,
@@ -1260,7 +1260,7 @@ function renderPlay() {
   const page = renderShell({
     titleRight: levelStarsBadge(state),
     content: h('div', { class: 'grid' }, [
-      h('div', { class: 'card sparkle', 'data-sparkle': '' }, [
+      h('div', { class: 'card sparkle', 'data-sparkle': '', tabindex: '-1' }, [
         h('div', { class: 'card-inner grid' }, [
           h('div', { class: 'sub', text: `Mode: ${opLabel(state.operation)} • Une seule question. Pas de stress !` }),
           h('div', { class: 'badge session-counter', 'data-session-counter': '', text: `Question ${sessionIndex} / ${sessionTotal}` }),
@@ -1356,8 +1356,23 @@ function renderPlay() {
   });
 
   queueMicrotask(() => {
+    const sparkleCard = page.querySelector('.card.sparkle');
+    if (sparkleCard) {
+      try {
+        sparkleCard.focus({ preventScroll: true });
+      } catch {
+        sparkleCard.focus();
+      }
+
+      try {
+        sparkleCard.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      } catch {
+        sparkleCard.scrollIntoView(true);
+      }
+    }
+
     const input = page.querySelector('[data-answer]');
-    if (input) keepFocus();
+    if (input && !DEVICE.shouldAvoidNativeKeyboard) keepFocus();
     updateSessionCounter();
     scheduleTimeout();
   });

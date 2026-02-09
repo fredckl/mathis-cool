@@ -82,6 +82,11 @@ a {
   gap: 12px;
 }
 
+.header-controls {
+  justify-content: flex-end;
+  align-items: center;
+}
+
 .brand {
   display: flex;
   align-items: center;
@@ -225,6 +230,72 @@ a {
   font-weight: 900;
   font-size: 16px;
   color: var(--text);
+}
+
+@media (max-width: 900px) {
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .brand {
+    justify-content: center;
+    text-align: center;
+    width: 100%;
+  }
+
+  .header-controls {
+    width: 100%;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .op-tile {
+    width: 130px;
+    height: 130px;
+    border-radius: 20px;
+  }
+
+  .op-icon {
+    font-size: 54px;
+  }
+}
+
+@media (max-width: 640px) {
+  .header-controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    justify-content: stretch;
+  }
+
+  .header-controls > * {
+    width: 100%;
+  }
+
+  .header-controls .toggle {
+    justify-content: center;
+  }
+
+  .op-grid {
+    gap: 10px;
+  }
+
+  .op-tile {
+    flex: 1 1 calc(50% - 10px);
+    width: calc(50% - 10px);
+    min-width: 120px;
+    height: 110px;
+    border-radius: 18px;
+  }
+
+  .op-icon {
+    font-size: 42px;
+  }
+
+  .op-label {
+    font-size: 14px;
+  }
 }
 
 .btn-full {

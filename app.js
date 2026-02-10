@@ -1194,13 +1194,13 @@ function renderPlay() {
     return page?.querySelector?.('[data-answer]') || null;
   }
 
-  function submitAnswer() {
+  function submitAnswer({ timedOut = false } = {}) {
     if (!isActive) return;
     const input = getAnswerInput();
     const raw = String(input?.value ?? '').trim();
     const v = raw === '' ? null : Number(raw);
     const ok = v !== null && Number.isFinite(v) && v === current.answer;
-    onAnswered({ correct: ok, value: v !== null && Number.isFinite(v) ? v : null, timedOut: false });
+    onAnswered({ correct: ok, value: v !== null && Number.isFinite(v) ? v : null, timedOut });
     keepFocus();
     setTimeoutTracked(keepFocus, 0);
   }
@@ -1217,6 +1217,7 @@ function renderPlay() {
   }
 
   function appendDigit(d) {
+    if (answered) return;
     const input = getAnswerInput();
     if (!input) return;
     input.value = `${String(input.value ?? '')}${String(d)}`;
@@ -1224,6 +1225,7 @@ function renderPlay() {
   }
 
   function backspace() {
+    if (answered) return;
     const input = getAnswerInput();
     if (!input) return;
     const s = String(input.value ?? '');
@@ -1256,7 +1258,7 @@ function renderPlay() {
     timerId = window.setTimeout(() => {
       if (!isActive) return;
       if (answered) return;
-      onAnswered({ correct: false, value: null, timedOut: true });
+      submitAnswer({ timedOut: true });
     }, timeLimitMs);
   }
 
@@ -1419,7 +1421,7 @@ function renderPlay() {
             class: 'answer-form',
             onsubmit: (e) => {
               e.preventDefault();
-              submitAnswer();
+              submitAnswer({ timedOut: false });
             }
           }, [
             h('input', {

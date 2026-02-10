@@ -4,6 +4,14 @@ const APP_VERSION = (typeof window !== 'undefined' && window.__MATHIS_COOL_VERSI
 const STORAGE_KEY = 'mathis_cool_state_v1';
 
 const MIN_ALLOWED_MIN_TIME_MS = 1500;
+const CHALLENGE_SETTINGS = {
+  minDurationSec: 10,
+  maxDurationSec: 180,
+  resultMin: 0,
+  resultMax: 999,
+  historyLimit: 6
+};
+const CHALLENGE_OPERATIONS = ['add', 'sub', 'mul', 'div'];
 
 const DEFAULT_CONFIG = {
   soundOn: true,
@@ -17,7 +25,8 @@ const DEFAULT_CONFIG = {
   timeStepMs: 150,
   streakToSpeedUp: 3,
   streakToLevelUp: 5,
-  levelMax: 12
+  levelMax: 12,
+  challengeDurationSec: 30
 };
 
 const DEFAULT_STATE = {
@@ -36,6 +45,470 @@ const DEFAULT_STATE = {
     badges: []
   }
 };
+
+function sanitizeChallengeCap(value, fallback) {
+  return clamp(Math.floor(Number(value) || fallback), 1, 999);
+}
+
+function challengeCapsFromConfig(cfg = DEFAULT_CONFIG) {
+  const source = cfg || DEFAULT_CONFIG;
+  return {
+    add: sanitizeChallengeCap(source.maxAdd, DEFAULT_CONFIG.maxAdd),
+    sub: sanitizeChallengeCap(source.maxSub, DEFAULT_CONFIG.maxSub),
+    mul: sanitizeChallengeCap(source.maxMul, DEFAULT_CONFIG.maxMul),
+    div: sanitizeChallengeCap(source.maxDiv, DEFAULT_CONFIG.maxDiv)
+  };
+}
+
+function renderChallenge() {
+  const state = loadState();
+  const durationSec = clampChallengeDurationSec(state.config.challengeDurationSec);
+  const durationMs = durationSec * 1000;
+  const challengeCaps = challengeCapsFromConfig(state.config);
+  const resultCap = Math.max(challengeCaps.add, challengeCaps.sub, challengeCaps.mul, challengeCaps.div);
+  const challengeRange = {
+    resultMin: CHALLENGE_SETTINGS.resultMin,
+    resultMax: resultCap
+  };
+
+  let destroyed = false;
+  let finished = false;
+  let acceptingAnswers = true;
+  let startedAt = 0;
+  let countdownTimeoutId = null;
+  let countdownRafId = null;
+
+  let current = generateChallengeQuestion(null, challengeRange, challengeCaps, resultCap);
+  let answeredCount = 0;
+  let correctCount = 0;
+  let streak = 0;
+  let bestStreak = 0;
+
+  const timerBadge = h('div', { class: 'badge session-counter', 'data-challenge-timer': '', text: `Temps restant : ${durationSec.toFixed(1)}s` });
+  const scoreBadge = h('div', { class: 'badge', 'data-challenge-score': '', text: 'Score : 0 / 0' });
+  const streakBadge = h('div', { class: 'badge', 'data-challenge-streak': '', text: 'Meilleure série : 0' });
+
+  function stopCountdown() {
+    if (countdownTimeoutId) window.clearTimeout(countdownTimeoutId);
+    countdownTimeoutId = null;
+    if (countdownRafId) cancelAnimationFrame(countdownRafId);
+    countdownRafId = null;
+  }
+
+  function cleanupOnExit() {
+    if (destroyed) return;
+    destroyed = true;
+    acceptingAnswers = false;
+    stopCountdown();
+    stopFx();
+  }
+
+  function getAnswerInput() {
+    return page?.querySelector?.('[data-challenge-answer]') || null;
+  }
+
+  function keepFocus() {
+    const input = getAnswerInput();
+    if (!input) return;
+    if (DEVICE.shouldAvoidNativeKeyboard) return;
+    try {
+      input.focus({ preventScroll: true });
+    } catch {
+      input.focus();
+    }
+  }
+
+  function appendDigit(d) {
+    if (!acceptingAnswers) return;
+    const input = getAnswerInput();
+    if (!input) return;
+    input.value = `${String(input.value ?? '')}${String(d)}`;
+    keepFocus();
+  }
+
+  function backspace() {
+    if (!acceptingAnswers) return;
+    const input = getAnswerInput();
+    if (!input) return;
+    const s = String(input.value ?? '');
+    input.value = s.slice(0, -1);
+    keepFocus();
+  }
+
+  function setToast(text, tone = '') {
+    const toast = page.querySelector('[data-challenge-toast]');
+    if (!toast) return;
+    toast.className = `toast ${tone}`.trim();
+    toast.textContent = text;
+  }
+
+  function updateScoreDisplay() {
+    if (scoreBadge) scoreBadge.textContent = `Score : ${correctCount} / ${answeredCount}`;
+    if (streakBadge) streakBadge.textContent = `Meilleure série : ${bestStreak}`;
+  }
+
+  function updateTimerDisplay(msRemaining) {
+    const seconds = Math.max(0, msRemaining) / 1000;
+    if (timerBadge) timerBadge.textContent = finished ? 'Temps écoulé !' : `Temps restant : ${seconds.toFixed(1)}s`;
+    const bar = page.querySelector('[data-challenge-progress-inner]');
+    if (bar) {
+      const pct = clamp(1 - msRemaining / durationMs, 0, 1) * 100;
+      bar.style.width = `${pct}%`;
+    }
+  }
+
+  function updateHistoryEntry(entry) {
+    const historyList = page.querySelector('[data-challenge-history]');
+    if (!historyList) return;
+    const tone = entry.correct ? 'good' : 'bad';
+    const item = h('div', { class: `toast challenge-history-item ${tone}` }, [
+      h('div', { class: 'k', text: `${entry.a} ${opSymbol(entry.op)} ${entry.b}` }),
+      h('div', { class: 'v', text: entry.correct ? `✓ ${entry.value}` : `✗ ${entry.value ?? '?'}` }),
+      h('div', { class: 'v', text: `= ${entry.answer}` })
+    ]);
+    historyList.prepend(item);
+    while (historyList.childElementCount > CHALLENGE_SETTINGS.historyLimit) {
+      historyList.removeChild(historyList.lastChild);
+    }
+  }
+
+  function updateMathDisplay() {
+    const math = page.querySelector('[data-challenge-math]');
+    if (math) math.textContent = `${current.a} ${opSymbol(current.op)} ${current.b}`;
+    const answerReveal = page.querySelector('[data-challenge-answer-reveal]');
+    if (answerReveal) {
+      answerReveal.textContent = '';
+      answerReveal.classList.remove('show');
+    }
+    const input = getAnswerInput();
+    if (input) {
+      input.value = '';
+      keepFocus();
+    }
+  }
+
+  function finishChallenge() {
+    if (finished) return;
+    finished = true;
+    acceptingAnswers = false;
+    stopCountdown();
+    updateTimerDisplay(0);
+    setToast(`Terminé ! ${correctCount} bonnes réponses sur ${answeredCount}.`, 'good');
+    const quitBtn = page.querySelector('[data-challenge-quit]');
+    if (quitBtn) quitBtn.disabled = false;
+  }
+
+  function startCountdown() {
+    startedAt = now();
+    const tick = () => {
+      if (destroyed || finished) return;
+      const elapsedMs = now() - startedAt;
+      const remaining = Math.max(0, durationMs - elapsedMs);
+      updateTimerDisplay(remaining);
+      if (remaining <= 0) {
+        finishChallenge();
+        return;
+      }
+      countdownRafId = requestAnimationFrame(tick);
+    };
+    countdownRafId = requestAnimationFrame(tick);
+    countdownTimeoutId = window.setTimeout(() => {
+      finishChallenge();
+    }, durationMs + 16);
+  }
+
+  function submitAnswer() {
+    if (!acceptingAnswers) return;
+    const input = getAnswerInput();
+    const raw = String(input?.value ?? '').trim();
+    const value = raw === '' ? null : Number(raw);
+    const numeric = value !== null && Number.isFinite(value) ? value : null;
+    const isCorrect = numeric !== null && numeric === current.answer;
+
+    answeredCount += 1;
+    if (isCorrect) {
+      correctCount += 1;
+      streak += 1;
+      bestStreak = Math.max(bestStreak, streak);
+    } else {
+      streak = 0;
+    }
+
+    updateScoreDisplay();
+
+    const tone = isCorrect ? 'good' : 'bad';
+    setToast(isCorrect ? pick(POSITIVE) : pickEncouraging(), tone);
+
+    const answerReveal = page.querySelector('[data-challenge-answer-reveal]');
+    if (answerReveal) {
+      if (isCorrect) {
+        answerReveal.textContent = '';
+        answerReveal.classList.remove('show');
+      } else {
+        answerReveal.textContent = `= ${current.answer}`;
+        answerReveal.classList.add('show');
+      }
+    }
+
+    if (isCorrect) {
+      triggerFireworkFx();
+    } else {
+      triggerFlashFx();
+    }
+
+    playTone({ on: state.config.soundOn, type: tone === 'good' ? 'good' : 'bad' });
+
+    updateHistoryEntry({
+      op: current.op,
+      a: current.a,
+      b: current.b,
+      answer: current.answer,
+      value: numeric,
+      correct: isCorrect
+    });
+
+    current = generateChallengeQuestion(current.answer, challengeRange, challengeCaps, resultCap);
+    updateMathDisplay();
+  }
+
+  const historyList = h('div', { class: 'challenge-history-list', 'data-challenge-history': '' });
+
+  const page = renderShell({
+    titleRight: h('button', {
+      class: 'btn btn-secondary',
+      onclick: () => {
+        cleanupOnExit();
+        setRoute('/');
+      },
+      text: 'Retour'
+    }),
+    content: h('div', { class: 'grid' }, [
+      h('div', { class: 'card sparkle', 'data-sparkle': '', tabindex: '-1' }, [
+        h('div', { class: 'card-inner grid' }, [
+          h('div', { class: 'kids-big', text: 'Mode Challenge' }),
+          h('div', { class: 'sub', text: `Enchaîne les calculs pendant ${durationSec}s.` }),
+          h('div', { class: 'badge-row' }, [timerBadge, scoreBadge, streakBadge]),
+          h('div', { class: 'question-line' }, [
+            h('div', { class: 'math', 'data-challenge-math': '', text: `${current.a} ${opSymbol(current.op)} ${current.b}` }),
+            h('div', { class: 'answer-reveal', 'data-challenge-answer-reveal': '', text: '' })
+          ]),
+          h('div', { class: 'feedback-slot' }, [
+            h('div', { class: 'toast', 'data-challenge-toast': '', text: 'Enchaîne le plus de réponses possibles !' })
+          ]),
+          h('div', { class: 'progress' }, [
+            h('div', { class: 'progress-fill', 'data-challenge-progress-inner': '' })
+          ]),
+          h('form', {
+            class: 'answer-form',
+            onsubmit: (e) => {
+              e.preventDefault();
+              submitAnswer();
+            }
+          }, [
+            h('input', {
+              class: 'input',
+              readonly: '',
+              inputmode: 'none',
+              pattern: '[0-9]*',
+              enterkeyhint: 'done',
+              autocomplete: 'off',
+              autocapitalize: 'off',
+              autocorrect: 'off',
+              spellcheck: 'false',
+              onbeforeinput: (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              },
+              onpaste: (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              },
+              ondrop: (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              },
+              onfocus: (e) => {
+                if (DEVICE.shouldAvoidNativeKeyboard) {
+                  try {
+                    e.currentTarget.blur();
+                  } catch {
+                    // ignore
+                  }
+                }
+              },
+              onkeydown: (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              },
+              placeholder: 'Ta réponse',
+              'data-challenge-answer': ''
+            }),
+            h('button', { class: 'submit-hidden', type: 'submit', tabindex: '-1' }, []),
+            h('div', { class: 'keypad', 'data-keypad': '' }, [
+              h('div', { class: 'keypad-grid' }, [
+                ...['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((d) => h('button', {
+                  class: 'btn btn-secondary keypad-btn',
+                  type: 'button',
+                  'aria-label': `Chiffre ${d}`,
+                  onpointerdown: (e) => e.preventDefault(),
+                  onclick: () => appendDigit(d)
+                }, [h('span', { text: d })])),
+                h('button', {
+                  class: 'btn btn-secondary keypad-btn keypad-btn-wide',
+                  type: 'button',
+                  'aria-label': 'Chiffre 0',
+                  onpointerdown: (e) => e.preventDefault(),
+                  onclick: () => appendDigit('0')
+                }, [h('span', { text: '0' })]),
+                h('button', {
+                  class: 'btn btn-secondary keypad-btn',
+                  type: 'button',
+                  'aria-label': 'Effacer',
+                  onpointerdown: (e) => e.preventDefault(),
+                  onclick: () => backspace()
+                }, [h('span', { text: '⌫' })]),
+                h('button', {
+                  class: 'btn btn-success keypad-btn keypad-btn-wide keypad-verify',
+                  type: 'submit',
+                  'aria-label': 'Valider la réponse'
+                }, [h('span', { text: 'Valider' })])
+              ])
+            ])
+          ]),
+          h('div', { class: 'sub', text: 'Historique récent' }),
+          historyList,
+          h('div', { class: 'btn-row' }, [
+            h('button', {
+              class: 'btn btn-secondary',
+              'data-challenge-quit': '',
+              onclick: () => {
+                cleanupOnExit();
+                setRoute('/');
+              },
+              text: 'Quitter'
+            })
+          ])
+        ])
+      ])
+    ]),
+    disableNav: true
+  });
+
+  queueMicrotask(() => {
+    if (destroyed) return;
+    const sparkleCard = page.querySelector('.card.sparkle');
+    if (sparkleCard) {
+      try {
+        sparkleCard.focus({ preventScroll: true });
+      } catch {
+        sparkleCard.focus();
+      }
+    }
+    updateMathDisplay();
+    updateScoreDisplay();
+    updateTimerDisplay(durationMs);
+    keepFocus();
+    startCountdown();
+  });
+
+  window.addEventListener('hashchange', cleanupOnExit, { once: true });
+
+  return page;
+}
+
+function clampChallengeDurationSec(sec) {
+  const n = Number(sec);
+  if (!Number.isFinite(n)) return DEFAULT_CONFIG.challengeDurationSec;
+  return clamp(Math.round(n), CHALLENGE_SETTINGS.minDurationSec, CHALLENGE_SETTINGS.maxDurationSec);
+}
+
+function tryBuildChallengeStep(op, base, min, max, caps = challengeCapsFromConfig()) {
+  const a = base;
+  if (!Number.isFinite(a)) return null;
+
+  if (op === 'add') {
+    const addCap = caps.add;
+    const addMax = Math.max(0, Math.min(max - a, addCap));
+    if (addMax < 1) return null;
+    const b = randInt(1, addMax);
+    return { op, a, b, answer: a + b };
+  }
+
+  if (op === 'sub') {
+    const subCap = caps.sub;
+    const subMax = Math.max(0, Math.min(a - min, subCap));
+    if (subMax < 1) return null;
+    const b = randInt(1, subMax);
+    return { op, a, b, answer: a - b };
+  }
+
+  if (op === 'mul') {
+    if (a === 0) {
+      const b = randInt(1, Math.min(9, caps.mul));
+      return { op, a, b, answer: 0 };
+    }
+    const absA = Math.abs(a);
+    if (absA > caps.mul) return null;
+    const maxFactorFromResult = Math.floor(max / Math.max(1, absA));
+    const factorLimit = Math.max(0, Math.min(caps.mul, maxFactorFromResult));
+    if (factorLimit < 1) return null;
+    const b = randInt(1, factorLimit);
+    const answer = a * b;
+    if (answer < min || answer > max) return null;
+    return { op, a, b, answer };
+  }
+
+  if (op === 'div') {
+    if (a === 0) {
+      const b = randInt(2, Math.min(9, caps.div));
+      return { op, a, b, answer: 0 };
+    }
+    const divisors = [];
+    const divisorCap = caps.div;
+    for (let d = 2; d <= divisorCap; d++) {
+      if (a % d !== 0) continue;
+      const result = a / d;
+      if (result < min || result > max) continue;
+      if (Math.abs(result) > divisorCap) continue;
+      divisors.push({ b: d, answer: result });
+    }
+    if (!divisors.length) return null;
+    const pickedDiv = pick(divisors);
+    return { op, a, b: pickedDiv.b, answer: pickedDiv.answer };
+  }
+
+  return null;
+}
+
+function generateChallengeQuestion(prevValue, opts = {}, caps = challengeCapsFromConfig()) {
+  const min = Number.isFinite(opts.resultMin) ? opts.resultMin : CHALLENGE_SETTINGS.resultMin;
+  const max = Number.isFinite(opts.resultMax) ? opts.resultMax : CHALLENGE_SETTINGS.resultMax;
+  let base = Number.isFinite(prevValue) ? prevValue : randInt(min, max);
+  const maxAttempts = 80;
+
+  for (let i = 0; i < maxAttempts; i++) {
+    const op = pick(CHALLENGE_OPERATIONS);
+    const candidate = tryBuildChallengeStep(op, base, min, max, caps);
+    if (candidate) return candidate;
+    if (!Number.isFinite(prevValue)) {
+      base = randInt(min, max);
+    }
+  }
+
+  const fallbackSubRange = Math.floor(Math.min(caps.sub, Math.max(0, base - min)));
+  if (fallbackSubRange >= 1) {
+    const b = fallbackSubRange;
+    return { op: 'sub', a: base, b, answer: base - b };
+  }
+
+  const fallbackAddRange = Math.floor(Math.min(caps.add, Math.max(0, max - base)));
+  if (fallbackAddRange >= 1) {
+    const b = fallbackAddRange;
+    return { op: 'add', a: base, b, answer: base + b };
+  }
+
+  return { op: 'add', a: clamp(base, min, max), b: 0, answer: clamp(base, min, max) };
+}
 
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
@@ -111,6 +584,11 @@ function normalizeConfig(state) {
   cfg.maxDiv = clamp(Math.floor(Number(cfg.maxDiv) || DEFAULT_CONFIG.maxDiv), 1, 999);
   cfg.minTimeMs = clamp(Number(cfg.minTimeMs) || DEFAULT_CONFIG.minTimeMs, MIN_ALLOWED_MIN_TIME_MS, 60_000);
   cfg.startTimeMs = clamp(Number(cfg.startTimeMs) || DEFAULT_CONFIG.startTimeMs, cfg.minTimeMs, 120_000);
+  cfg.challengeDurationSec = clamp(
+    Math.round(Number(cfg.challengeDurationSec) || DEFAULT_CONFIG.challengeDurationSec),
+    CHALLENGE_SETTINGS.minDurationSec,
+    CHALLENGE_SETTINGS.maxDurationSec
+  );
 }
 
 function applyThemeFromState(state) {
@@ -651,6 +1129,7 @@ function renderShell({ titleRight, content, disableNav = false }) {
 
 function renderHome() {
   const state = loadState();
+  const challengeDurationSec = clampChallengeDurationSec(state.config.challengeDurationSec);
 
   const left = h('div', { class: 'card' }, [
     h('div', { class: 'card-inner grid' }, [
@@ -717,8 +1196,20 @@ function renderHome() {
     ])
   ]);
 
+  const challengeCard = h('div', { class: 'card challenge-card' }, [
+    h('div', { class: 'card-inner grid' }, [
+      h('div', { class: 'kids-big', text: 'Mode Challenge' }),
+      h('div', { class: 'sub', text: 'Réponds à une chaîne de calculs le plus vite possible.' }),
+      h('div', { class: 'sub', text: `Durée: ${challengeDurationSec}s (réglable).` }),
+      h('div', { class: 'sub', text: 'Addition, soustraction, multiplication et division s’enchaînent.' }),
+      h('div', { class: 'btn-row' }, [
+        h('button', { class: 'btn btn-primary btn-full', onclick: () => setRoute('/challenge'), text: 'Lancer le challenge' })
+      ])
+    ])
+  ]);
+
   return renderShell({
-    content: h('div', { class: 'grid' }, [left])
+    content: h('div', { class: 'grid grid-2' }, [left, challengeCard])
   });
 }
 
@@ -854,6 +1345,20 @@ function renderSettings() {
               }
             }
           }),
+          h('div', { class: 'sub', text: 'Mode Challenge (durée en secondes)' }),
+          h('input', {
+            class: 'input',
+            type: 'number',
+            min: String(CHALLENGE_SETTINGS.minDurationSec),
+            max: String(CHALLENGE_SETTINGS.maxDurationSec),
+            step: '1',
+            value: String(clampChallengeDurationSec(state.config.challengeDurationSec)),
+            'data-challenge-duration': ''
+          }),
+          h('div', {
+            class: 'sub',
+            text: `Entre ${CHALLENGE_SETTINGS.minDurationSec}s et ${CHALLENGE_SETTINGS.maxDurationSec}s.`
+          }),
           h('div', { class: 'btn-row' }, [
             h('button', {
               class: 'btn btn-secondary',
@@ -866,6 +1371,7 @@ function renderSettings() {
                 const capSubEl = document.querySelector('[data-cap-sub]');
                 const capMulEl = document.querySelector('[data-cap-mul]');
                 const capDivEl = document.querySelector('[data-cap-div]');
+                const challengeDurationEl = document.querySelector('[data-challenge-duration]');
 
                 const minSec = Number(String(minEl?.value ?? '').replace(',', '.'));
                 const startSec = Number(String(startEl?.value ?? '').replace(',', '.'));
@@ -873,6 +1379,7 @@ function renderSettings() {
                 const capSub = Math.floor(Number(String(capSubEl?.value ?? '').replace(',', '.')));
                 const capMul = Math.floor(Number(String(capMulEl?.value ?? '').replace(',', '.')));
                 const capDiv = Math.floor(Number(String(capDivEl?.value ?? '').replace(',', '.')));
+                const challengeSec = Math.round(Number(String(challengeDurationEl?.value ?? '').replace(',', '.')));
 
                 if (!Number.isFinite(minSec) || !Number.isFinite(startSec)) {
                   render();
@@ -889,6 +1396,13 @@ function renderSettings() {
                 if (Number.isFinite(capSub)) s.config.maxSub = clamp(capSub, 1, 999);
                 if (Number.isFinite(capMul)) s.config.maxMul = clamp(capMul, 1, 999);
                 if (Number.isFinite(capDiv)) s.config.maxDiv = clamp(capDiv, 1, 999);
+                if (Number.isFinite(challengeSec)) {
+                  s.config.challengeDurationSec = clamp(
+                    challengeSec,
+                    CHALLENGE_SETTINGS.minDurationSec,
+                    CHALLENGE_SETTINGS.maxDurationSec
+                  );
+                }
 
                 saveState(s);
                 render();
@@ -1543,6 +2057,11 @@ function render() {
   const route = getRoute();
 
   applyThemeFromState(loadState());
+
+  if (route === '/challenge') {
+    mount(renderChallenge());
+    return;
+  }
 
   if (route === '/play') {
     mount(renderPlay());

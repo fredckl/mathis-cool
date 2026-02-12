@@ -219,7 +219,8 @@ export default function ChallengePage() {
     navigate('/');
   }, [navigate, stopCountdown]);
 
-  const timerLabel = isFinished ? 'Temps écoulé !' : `Temps restant : ${(timeRemainingMs / 1000).toFixed(1)}s`;
+  const timerSeconds = Math.max(0, Math.ceil(timeRemainingMs / 1000));
+  const timerLabel = isFinished ? 'Temps écoulé !' : `Temps restant : ${timerSeconds}s`;
   const progressRatio = clamp(timeRemainingMs / durationMs, 0, 1);
   const scoreLabel = `Score : ${stats.correct} / ${stats.answered}`;
   const streakLabel = `Meilleure série : ${stats.bestStreak}`;

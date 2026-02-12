@@ -7,7 +7,12 @@ export default defineConfig({
   publicDir: 'public',
   build: {
     sourcemap: true,
-    emptyOutDir: true
+    emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        app: './index.html',
+      },
+    },
   },
   define: {
     'import.meta.env.MATHIS_COOL_VERSION': JSON.stringify(version)

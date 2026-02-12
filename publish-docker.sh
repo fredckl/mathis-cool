@@ -2,11 +2,12 @@
 
 set -euo pipefail
 
-VERSION_RAW=$(node -p "require('fs').readFileSync('version.js','utf8').match(/__MATHIS_COOL_VERSION__\\s*=\\s*'([^']+)'/)[1]")
-VERSION_TAG=${VERSION_RAW#v}
+node scripts/write-version.js
+
+VERSION_TAG=$(node -p "JSON.parse(require('fs').readFileSync('package.json','utf8')).version")
 
 if [ -z "${VERSION_TAG}" ] || ! printf '%s' "${VERSION_TAG}" | grep -Eq '^[0-9]+\.[0-9]+(\.[0-9]+)?$'; then
-  echo "Invalid version tag derived from version.js: '${VERSION_RAW}' -> '${VERSION_TAG}'" >&2
+  echo "Invalid version tag derived from package.json: '${VERSION_TAG}'" >&2
   exit 1
 fi
 

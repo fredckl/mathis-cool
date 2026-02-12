@@ -155,6 +155,16 @@ export default function ChallengePage() {
     };
   }, [focusInput, startCountdown, stopCountdown]);
 
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return undefined;
+    }
+    document.body.classList.add('no-scroll');
+    return () => {
+      document.body.classList.remove('no-scroll');
+    };
+  }, []);
+
   const appendDigit = useCallback(
     (digit) => {
       if (!acceptingRef.current) return;
@@ -256,9 +266,15 @@ export default function ChallengePage() {
 
   return (
     <Layout titleRight={titleRight} disableNav={!isFinished}>
-      <div className="grid">
-        <div className={`card sparkle ${sparkle ? 'on' : ''}`} tabIndex={-1}>
-          <div className="card-inner grid">
+      <div className="play-overlay" role="dialog" aria-modal="true" aria-label="Défi en cours">
+        <div className="play-overlay-backdrop" aria-hidden="true" />
+        <div className="play-overlay-card">
+          <button type="button" className="play-overlay-close" aria-label="Quitter le défi" onClick={handleQuit}>
+            <span aria-hidden="true">×</span>
+          </button>
+          <div className="grid">
+            <div className={`card sparkle ${sparkle ? 'on' : ''}`} tabIndex={-1}>
+              <div className="card-inner grid">
             <div className="kids-big">Mode Challenge</div>
             <div className="sub">Enchaîne les calculs pendant {durationSec}s.</div>
             <div className="badge-row">
@@ -348,22 +364,20 @@ export default function ChallengePage() {
               </div>
             </form>
             <div className="sub">Historique récent</div>
-            <div className="challenge-history-list">
-              {history.map((entry, idx) => (
-                <div
-                  key={`${entry.a}-${entry.b}-${entry.value}-${idx}`}
-                  className={`toast challenge-history-item ${entry.correct ? 'good' : 'bad'}`}
-                >
-                  <div className="k">{`${entry.a} ${opSymbol(entry.op)} ${entry.b}`}</div>
-                  <div className="v">{entry.correct ? `✓ ${entry.value}` : `✗ ${entry.value ?? '?'}`}</div>
-                  <div className="v">= {entry.answer}</div>
+                <div className="challenge-history-list">
+                  {history.map((entry, idx) => (
+                    <div
+                      key={`${entry.a}-${entry.b}-${entry.value}-${idx}`}
+                      className={`toast challenge-history-item ${entry.correct ? 'good' : 'bad'}`}
+                    >
+                      <div className="k">{`${entry.a} ${opSymbol(entry.op)} ${entry.b}`}</div>
+                      <div className="v">{entry.correct ? `✓ ${entry.value}` : `✗ ${entry.value ?? '?'}`}</div>
+                      <div className="v">= {entry.answer}</div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <div className="btn-row">
-              <button type="button" className="btn btn-secondary" onClick={handleQuit}>
-                Quitter
-              </button>
+
+              </div>
             </div>
           </div>
         </div>

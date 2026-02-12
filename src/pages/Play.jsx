@@ -1,3 +1,9 @@
+  const updateProgressFill = useCallback((ratio) => {
+    const el = progressFillRef.current;
+    if (!el) return;
+    el.style.transform = `scaleX(${ratio})`;
+  }, []);
+
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -78,7 +84,7 @@ export default function PlayPage() {
   const startedAtRef = useRef(0);
   const answeredRef = useRef(false);
   const timeoutsRef = useRef(new Set());
-  const [timeRatio, setTimeRatio] = useState(1);
+  const progressFillRef = useRef(null);
   const timeLimitRef = useRef(timeLimitMs);
 
   const focusInput = useCallback(() => {
@@ -236,11 +242,11 @@ export default function PlayPage() {
     setToast(`Tu as ${formatMs(currentLimit)} pour répondre.`);
     setToastTone('');
 
-    setTimeRatio(1);
+    updateProgressFill(1);
     const tick = () => {
       const elapsed = now() - startedAtRef.current;
       const remainingRatio = clamp(1 - elapsed / currentLimit, 0, 1);
-      setTimeRatio(remainingRatio);
+      updateProgressFill(remainingRatio);
       if (elapsed < currentLimit && !answeredRef.current) {
         progressRafRef.current = requestAnimationFrame(tick);
       }
@@ -295,7 +301,7 @@ export default function PlayPage() {
               <div className={`toast ${toastTone}`.trim()}>{toast}</div>
             </div>
             <div className="progress">
-              <div className="progress-fill" style={{ transform: `scaleX(${timeRatio})` }} />
+              <div ref={progressFillRef} className="progress-fill" style={{ transform: 'scaleX(1)' }} />
             </div>
             <form className="answer-form" onSubmit={handleFormSubmit}>
               <input

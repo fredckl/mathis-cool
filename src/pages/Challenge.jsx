@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout.jsx';
 import { useAppState } from '../state/AppContext.jsx';
 import { DEVICE } from '../lib/device.js';
-import { clamp, now } from '../lib/math.js';
+import { now } from '../lib/math.js';
 import {
   CHALLENGE_SETTINGS,
   DEFAULT_CONFIG
@@ -60,6 +60,14 @@ export default function ChallengePage() {
   const acceptingRef = useRef(true);
   const finishedRef = useRef(false);
   const statsRef = useRef(stats);
+  const progressFillRef = useRef(null);
+  const lastDisplayedSecondsRef = useRef(Math.ceil(durationMs / 1000));
+
+  const updateProgressFill = useCallback((ratio) => {
+    const el = progressFillRef.current;
+    if (!el) return;
+    el.style.transform = `scaleX(${Math.min(Math.max(ratio, 0), 1)})`;
+  }, []);
 
   useEffect(() => {
     statsRef.current = stats;
@@ -94,9 +102,10 @@ export default function ChallengePage() {
     acceptingRef.current = false;
     stopCountdown();
     setTimeRemainingMs(0);
+    updateProgressFill(0);
     setToast(`Terminé ! ${statsRef.current.correct} bonnes réponses sur ${statsRef.current.answered}.`);
     setToastTone('good');
-  }, [stopCountdown]);
+  }, [stopCountdown, updateProgressFill]);
 
   const startCountdown = useCallback(() => {
     startedAtRef.current = now();
@@ -106,11 +115,18 @@ export default function ChallengePage() {
     setIsFinished(false);
     setAcceptingAnswers(true);
     acceptingRef.current = true;
+    lastDisplayedSecondsRef.current = Math.ceil(durationMs / 1000);
+    updateProgressFill(1);
 
     const tick = () => {
       const elapsed = now() - startedAtRef.current;
       const remaining = Math.max(0, durationMs - elapsed);
-      setTimeRemainingMs(remaining);
+      updateProgressFill(remaining / durationMs);
+      const nextSeconds = Math.max(0, Math.ceil(remaining / 1000));
+      if (nextSeconds !== lastDisplayedSecondsRef.current) {
+        lastDisplayedSecondsRef.current = nextSeconds;
+        setTimeRemainingMs(remaining);
+      }
       if (remaining <= 0) {
         finishChallenge();
         return;
@@ -120,7 +136,7 @@ export default function ChallengePage() {
 
     timerRafRef.current = requestAnimationFrame(tick);
     timerTimeoutRef.current = window.setTimeout(finishChallenge, durationMs + 16);
-  }, [durationMs, finishChallenge, stopCountdown]);
+  }, [durationMs, finishChallenge, stopCountdown, updateProgressFill]);
 
   useEffect(() => {
     startCountdown();
@@ -221,7 +237,6 @@ export default function ChallengePage() {
 
   const timerSeconds = Math.max(0, Math.ceil(timeRemainingMs / 1000));
   const timerLabel = isFinished ? 'Temps écoulé !' : `Temps restant : ${timerSeconds}s`;
-  const progressRatio = clamp(timeRemainingMs / durationMs, 0, 1);
   const scoreLabel = `Score : ${stats.correct} / ${stats.answered}`;
   const streakLabel = `Meilleure série : ${stats.bestStreak}`;
 
@@ -251,7 +266,7 @@ export default function ChallengePage() {
               <div className={`toast ${toastTone}`.trim()}>{toast}</div>
             </div>
             <div className="progress">
-              <div className="progress-fill" style={{ transform: `scaleX(${progressRatio})` }} />
+              <div ref={progressFillRef} className="progress-fill" style={{ transform: 'scaleX(1)' }} />
             </div>
             <form className="answer-form" onSubmit={handleFormSubmit}>
               <input

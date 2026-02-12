@@ -46,6 +46,12 @@ export function questionUsesZeroOperand(question) {
   return question.a === 0 || question.b === 0;
 }
 
+export function repeatsZeroOperation(previousQuestion, candidate) {
+  if (!previousQuestion || !candidate) return false;
+  if (previousQuestion.op !== candidate.op) return false;
+  return questionUsesZeroOperand(previousQuestion) && questionUsesZeroOperand(candidate);
+}
+
 export function numberRangeForLevel(level) {
   const t = clamp(level, 1, 12);
   if (t <= 2) return { min: 0, max: 5 };

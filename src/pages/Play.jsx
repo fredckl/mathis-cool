@@ -16,7 +16,7 @@ import {
   opSymbol,
   pickEncouraging,
   pickPositive,
-  questionUsesZeroOperand,
+  repeatsZeroOperation,
   updateRewards
 } from '../lib/gameLogic.js';
 import { clamp, now } from '../lib/math.js';
@@ -39,12 +39,7 @@ function pickNextQuestion(baseState, seenCorrect, previousQuestion = null) {
   let candidate = generateQuestion(baseState);
   for (let i = 0; i < maxAttempts; i += 1) {
     const key = questionKey(candidate);
-    const repeatsZeroOperation =
-      previousQuestion &&
-      previousQuestion.op === candidate.op &&
-      questionUsesZeroOperand(previousQuestion) &&
-      questionUsesZeroOperand(candidate);
-    if (!repeatsZeroOperation && (!key || !seen.has(key))) {
+    if (!repeatsZeroOperation(previousQuestion, candidate) && (!key || !seen.has(key))) {
       return candidate;
     }
     candidate = generateQuestion(baseState);

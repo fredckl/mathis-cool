@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [react()],
   publicDir: 'public',
   build: {
+    manifest: true,
     sourcemap: true,
     emptyOutDir: true,
     rollupOptions: {

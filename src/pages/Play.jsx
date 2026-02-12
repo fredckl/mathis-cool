@@ -238,13 +238,13 @@ export default function PlayPage() {
 
     const progressEl = progressRef.current;
     if (progressEl) {
-      progressEl.style.width = '0%';
+      progressEl.style.transform = 'scaleX(1)';
     }
     const tick = () => {
       if (!progressEl) return;
       const elapsed = now() - startedAtRef.current;
-      const pct = clamp((elapsed / currentLimit) * 100, 0, 100);
-      progressEl.style.width = `${pct}%`;
+      const remainingRatio = clamp(1 - elapsed / currentLimit, 0, 1);
+      progressEl.style.transform = `scaleX(${remainingRatio})`;
       if (elapsed < currentLimit && !answeredRef.current) {
         progressRafRef.current = requestAnimationFrame(tick);
       }

@@ -39,8 +39,16 @@ export default function ChallengePage() {
   const durationSec = clampChallengeDurationSec(state.config.challengeDurationSec);
   const durationMs = durationSec * 1000;
 
+  const zeroSafeRange = useMemo(
+    () => ({
+      ...challengeRange,
+      preventZeroOperand: true
+    }),
+    [challengeRange]
+  );
+
   const [currentQuestion, setCurrentQuestion] = useState(() =>
-    generateChallengeQuestion(null, challengeRange, challengeCaps, resultCap)
+    generateChallengeQuestion(null, zeroSafeRange, challengeCaps, resultCap)
   );
   const [answerValue, setAnswerValue] = useState('');
   const [toast, setToast] = useState('Enchaîne le plus de réponses possibles !');
@@ -170,11 +178,11 @@ export default function ChallengePage() {
   }, []);
 
   const loadNextQuestion = useCallback(() => {
-    setCurrentQuestion((prev) => generateChallengeQuestion(prev.answer, challengeRange, challengeCaps, resultCap));
+    setCurrentQuestion((prev) => generateChallengeQuestion(prev.answer, zeroSafeRange, challengeCaps, resultCap));
     setAnswerValue('');
     setAnswerReveal('');
     focusInput();
-  }, [challengeCaps, challengeRange, focusInput, resultCap]);
+  }, [challengeCaps, focusInput, resultCap, zeroSafeRange]);
 
   const handleAnswer = useCallback(
     () => {

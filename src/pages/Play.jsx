@@ -16,6 +16,7 @@ import {
   opSymbol,
   pickEncouraging,
   pickPositive,
+  questionUsesZeroOperand,
   updateRewards
 } from '../lib/gameLogic.js';
 import { clamp, now } from '../lib/math.js';
@@ -32,13 +33,18 @@ function questionKey(question) {
   return `${question.op}|${question.a}|${question.b}`;
 }
 
-function pickNextQuestion(baseState, seenCorrect) {
+function pickNextQuestion(baseState, seenCorrect, previousQuestion = null) {
   const seen = seenCorrect || new Set();
   const maxAttempts = 60;
   let candidate = generateQuestion(baseState);
   for (let i = 0; i < maxAttempts; i += 1) {
     const key = questionKey(candidate);
-    if (!key || !seen.has(key)) {
+    const repeatsZeroOperation =
+      previousQuestion &&
+      previousQuestion.op === candidate.op &&
+      questionUsesZeroOperand(previousQuestion) &&
+      questionUsesZeroOperand(candidate);
+    if (!repeatsZeroOperation && (!key || !seen.has(key))) {
       return candidate;
     }
     candidate = generateQuestion(baseState);
@@ -216,7 +222,7 @@ export default function PlayPage() {
 
       setTrackedTimeout(() => {
         setSessionIndex((prev) => prev + 1);
-        setQuestion(pickNextQuestion(updatedSnapshot, seenCorrectRef.current));
+        setQuestion(pickNextQuestion(updatedSnapshot, seenCorrectRef.current, question));
       }, correct ? 550 : 2500);
     },
     [answer, focusInput, isFinished, navigate, question, sessionIndex, setState, state.config.soundOn, stopTimers]

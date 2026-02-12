@@ -41,6 +41,11 @@ export function opLabel(op) {
   return 'Addition';
 }
 
+export function questionUsesZeroOperand(question) {
+  if (!question) return false;
+  return question.a === 0 || question.b === 0;
+}
+
 export function numberRangeForLevel(level) {
   const t = clamp(level, 1, 12);
   if (t <= 2) return { min: 0, max: 5 };
@@ -203,10 +208,24 @@ export function tryBuildChallengeStep(op, base, min, max, caps = challengeCapsFr
   return null;
 }
 
+function pickNonZeroBetween(min, max) {
+  for (let i = 0; i < 20; i += 1) {
+    const candidate = randInt(min, max);
+    if (candidate !== 0) return candidate;
+  }
+  if (min !== 0) return min;
+  if (max !== 0) return max;
+  return 0;
+}
+
 export function generateChallengeQuestion(prevValue, opts = {}, caps = challengeCapsFromConfig()) {
   const min = Number.isFinite(opts.resultMin) ? opts.resultMin : CHALLENGE_SETTINGS.resultMin;
   const max = Number.isFinite(opts.resultMax) ? opts.resultMax : CHALLENGE_SETTINGS.resultMax;
+  const preventZeroOperand = Boolean(opts.preventZeroOperand);
   let base = Number.isFinite(prevValue) ? prevValue : randInt(min, max);
+  if (preventZeroOperand && base === 0) {
+    base = pickNonZeroBetween(min, max);
+  }
   const maxAttempts = 80;
 
   for (let i = 0; i < maxAttempts; i++) {

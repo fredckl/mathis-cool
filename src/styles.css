@@ -775,11 +775,11 @@ canvas {
 
 @media (max-width: 640px) {
   .play-overlay {
-    padding: 12px;
+    padding: 0px;
   }
 
   .play-overlay-card {
-    padding: 22px 18px;
+    padding: 3px 3px;
     border-radius: 22px;
   }
 

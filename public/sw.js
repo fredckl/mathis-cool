@@ -3,22 +3,75 @@ importScripts('/version.js');
 const VERSION = self.__MATHIS_COOL_VERSION__ || 'v0';
 const CACHE_NAME = 'mathis-cool-' + VERSION;
 
-const ASSETS = [
+const CORE_ASSETS = [
   '/',
   '/index.html',
   '/version.js',
-  '/styles.css',
-  '/app.js',
+  '/manifest.webmanifest',
   '/favicon.svg',
-  '/favicon.png',
-  '/manifest.webmanifest'
+  '/favicon.png'
 ];
+
+const CORE_ASSET_SET = new Set(CORE_ASSETS);
+const APP_SHELL_PREFIXES = ['/assets/'];
+
+function normalizeAssetPath(path) {
+  if (typeof path !== 'string' || !path.trim()) return null;
+  if (path.startsWith('http://') || path.startsWith('https://')) return null;
+  return path.startsWith('/') ? path : `/${path}`;
+}
+
+function dedupeAssets(list) {
+  const seen = new Set();
+  const result = [];
+  list.forEach((item) => {
+    const normalized = normalizeAssetPath(item);
+    if (!normalized) return;
+    if (seen.has(normalized)) return;
+    seen.add(normalized);
+    result.push(normalized);
+  });
+  return result;
+}
+
+async function loadManifestAssets() {
+  try {
+    const response = await fetch(`/manifest.json?sw-bust=${encodeURIComponent(VERSION)}`, {
+      cache: 'no-store',
+      credentials: 'same-origin'
+    });
+    if (!response || !response.ok) return [];
+    const manifest = await response.json();
+    const files = [];
+
+    Object.values(manifest || {}).forEach((entry) => {
+      if (!entry || typeof entry !== 'object') return;
+      if (entry.file) files.push(entry.file);
+      if (Array.isArray(entry.css)) files.push(...entry.css);
+      if (Array.isArray(entry.assets)) files.push(...entry.assets);
+    });
+
+    return files;
+  } catch (error) {
+    console.warn('SW manifest fetch failed', error);
+    return [];
+  }
+}
+
+async function precacheAppShell() {
+  const cache = await caches.open(CACHE_NAME);
+  const manifestAssets = await loadManifestAssets();
+  const targets = dedupeAssets([...CORE_ASSETS, ...manifestAssets]);
+  if (!targets.length) return;
+  await cache.addAll(targets);
+}
 
 function isAppShell(req) {
   try {
     const url = new URL(req.url);
     if (url.origin !== self.location.origin) return false;
-    return url.pathname === '/' || url.pathname === '/index.html' || url.pathname === '/styles.css' || url.pathname === '/app.js' || url.pathname === '/favicon.svg' || url.pathname === '/favicon.png' || url.pathname === '/manifest.webmanifest';
+    if (CORE_ASSET_SET.has(url.pathname)) return true;
+    return APP_SHELL_PREFIXES.some((prefix) => url.pathname.startsWith(prefix));
   } catch {
     return false;
   }
@@ -26,7 +79,10 @@ function isAppShell(req) {
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+    precacheAppShell().catch((error) => {
+      console.warn('SW install caching failed', error);
+      return caches.open(CACHE_NAME).then((cache) => cache.addAll(CORE_ASSETS));
+    })
   );
   self.skipWaiting();
 });

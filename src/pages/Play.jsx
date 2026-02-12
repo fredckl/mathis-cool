@@ -1,9 +1,3 @@
-  const updateProgressFill = useCallback((ratio) => {
-    const el = progressFillRef.current;
-    if (!el) return;
-    el.style.transform = `scaleX(${ratio})`;
-  }, []);
-
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -86,6 +80,12 @@ export default function PlayPage() {
   const timeoutsRef = useRef(new Set());
   const progressFillRef = useRef(null);
   const timeLimitRef = useRef(timeLimitMs);
+
+  const updateProgressFill = useCallback((ratio) => {
+    const el = progressFillRef.current;
+    if (!el) return;
+    el.style.transform = `scaleX(${ratio})`;
+  }, []);
 
   const focusInput = useCallback(() => {
     const el = inputRef.current;

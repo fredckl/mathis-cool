@@ -229,6 +229,16 @@ export default function PlayPage() {
   }, [submitAnswer]);
 
   useEffect(() => {
+    if (typeof document === 'undefined') {
+      return undefined;
+    }
+    document.body.classList.add('no-scroll');
+    return () => {
+      document.body.classList.remove('no-scroll');
+    };
+  }, []);
+
+  useEffect(() => {
     timeLimitRef.current = timeLimitMs;
   }, [timeLimitMs]);
 
@@ -287,9 +297,15 @@ export default function PlayPage() {
 
   return (
     <Layout disableNav={isFinished}>
-      <div className="grid">
-        <div className={`card sparkle ${sparkle ? 'on' : ''}`} tabIndex={-1}>
-          <div className="card-inner grid">
+      <div className="play-overlay" role="dialog" aria-modal="true" aria-label="Partie en cours">
+        <div className="play-overlay-backdrop" aria-hidden="true" />
+        <div className="play-overlay-card">
+          <button type="button" className="play-overlay-close" aria-label="Quitter la partie" onClick={handleQuit}>
+            <span aria-hidden="true">×</span>
+          </button>
+          <div className="grid">
+            <div className={`card sparkle ${sparkle ? 'on' : ''}`} tabIndex={-1}>
+              <div className="card-inner grid">
             <div className="sub">Mode: {opLabel(state.operation)} • Une seule question. Pas de stress !</div>
             <div className="badge session-counter">
               {isFinished ? 'Terminé !' : `Question ${sessionIndex} / ${SESSION_TOTAL}`}
@@ -375,10 +391,7 @@ export default function PlayPage() {
                 </div>
               </div>
             </form>
-            <div className="btn-row">
-              <button type="button" className="btn btn-secondary" onClick={handleQuit}>
-                Quitter
-              </button>
+              </div>
             </div>
           </div>
         </div>

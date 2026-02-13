@@ -277,10 +277,12 @@ export default function ChallengePage() {
               <div className="card-inner grid">
             <div className="kids-big">Mode Challenge</div>
             <div className="sub">Enchaîne les calculs pendant {durationSec}s.</div>
-            <div className="badge-row">
+            <div className="challenge-status">
               <div className="badge session-counter">{timerLabel}</div>
-              <div className="badge">{scoreLabel}</div>
-              <div className="badge">{streakLabel}</div>
+              <div className="challenge-metrics">
+                <div className="badge">{scoreLabel}</div>
+                <div className="badge">{streakLabel}</div>
+              </div>
             </div>
             <div className="question-line">
               <div className="math">{`${currentQuestion.a} ${opSymbol(currentQuestion.op)} ${currentQuestion.b}`}</div>

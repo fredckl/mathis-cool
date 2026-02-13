@@ -271,6 +271,7 @@ export default function ChallengePage() {
 
   const timerSeconds = Math.max(0, Math.ceil(timeRemainingMs / 1000));
   const timerLabel = isFinished ? 'Temps écoulé !' : `Temps restant : ${timerSeconds}s`;
+  const progressTimerLabel = isFinished ? 'Terminé !' : `${timerSeconds}s`;
   const scoreLabel = `Score : ${stats.correct} / ${stats.answered}`;
   const streakLabel = `Meilleure série : ${stats.bestStreak}`;
 
@@ -293,9 +294,13 @@ export default function ChallengePage() {
               <div className="card-inner grid">
             <div className="kids-big">Mode Challenge</div>
             <div className="sub">Enchaîne les calculs pendant {durationSec}s.</div>
-            <div className="challenge-status">
-              <div className="badge session-counter">{timerLabel}</div>
-            </div>
+
+            {isFinished && (
+              <div className="challenge-metrics challenge-metrics-summary">
+                <div className="badge">{scoreLabel}</div>
+                <div className="badge">{streakLabel}</div>
+              </div>
+            )}
             <div className="question-line">
               <div className="math">{`${currentQuestion.a} ${opSymbol(currentQuestion.op)} ${currentQuestion.b}`}</div>
               <div className={`answer-reveal ${answerReveal ? 'show' : ''}`}>{answerReveal}</div>
@@ -303,8 +308,13 @@ export default function ChallengePage() {
             <div className="feedback-slot">
               <div className={`toast ${toastTone}`.trim()}>{toast}</div>
             </div>
-            <div className="progress">
-              <div ref={progressFillRef} className="progress-fill" style={{ transform: 'scaleX(1)' }} />
+            <div className="progress-meter" aria-label="Temps restant">
+              <div className="progress">
+                <div ref={progressFillRef} className="progress-fill" style={{ transform: 'scaleX(1)' }} />
+              </div>
+              <div className="progress-label" role="status" aria-live="polite">
+                {progressTimerLabel}
+              </div>
             </div>
             <form className="answer-form" onSubmit={handleFormSubmit}>
               <input

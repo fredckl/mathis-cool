@@ -520,7 +520,7 @@ a {
 }
 
 .progress {
-  height: 14px;
+  height: 100%;
   width: 100%;
   border-radius: 999px;
   background: var(--progress-bg);
@@ -549,7 +549,9 @@ a {
 
 .progress-meter {
   position: relative;
-  height: 22px;
+  height: 14px;
+  display: flex;
+  align-items: center;
 }
 
 .progress-label {

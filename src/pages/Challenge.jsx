@@ -295,12 +295,6 @@ export default function ChallengePage() {
             <div className="sub">Enchaîne les calculs pendant {durationSec}s.</div>
             <div className="challenge-status">
               <div className="badge session-counter">{timerLabel}</div>
-              {isFinished && (
-                <div className="challenge-metrics">
-                  <div className="badge">{scoreLabel}</div>
-                  <div className="badge">{streakLabel}</div>
-                </div>
-              )}
             </div>
             <div className="question-line">
               <div className="math">{`${currentQuestion.a} ${opSymbol(currentQuestion.op)} ${currentQuestion.b}`}</div>
@@ -383,6 +377,12 @@ export default function ChallengePage() {
                 </div>
               </div>
             </form>
+            {isFinished && (
+              <div className="challenge-metrics challenge-metrics-summary">
+                <div className="badge">{scoreLabel}</div>
+                <div className="badge">{streakLabel}</div>
+              </div>
+            )}
             {isFinished && (
               <>
                 <div className="sub">Historique récent</div>

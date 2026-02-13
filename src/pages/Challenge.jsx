@@ -20,6 +20,9 @@ import {
 import { stopFx, triggerFireworkFx, triggerFlashFx } from '../lib/fx.js';
 import { playTone } from '../lib/audio.js';
 
+const INTRO_TOAST = 'Enchaîne le plus de réponses possibles !';
+const createInitialStats = () => ({ answered: 0, correct: 0, streak: 0, bestStreak: 0 });
+
 export default function ChallengePage() {
   const navigate = useNavigate();
   const { state } = useAppState();
@@ -51,11 +54,11 @@ export default function ChallengePage() {
     generateChallengeQuestion(null, zeroSafeRange, challengeCaps, resultCap)
   );
   const [answerValue, setAnswerValue] = useState('');
-  const [toast, setToast] = useState('Enchaîne le plus de réponses possibles !');
+  const [toast, setToast] = useState(INTRO_TOAST);
   const [toastTone, setToastTone] = useState('');
   const [answerReveal, setAnswerReveal] = useState('');
   const [history, setHistory] = useState([]);
-  const [stats, setStats] = useState({ answered: 0, correct: 0, streak: 0, bestStreak: 0 });
+  const [stats, setStats] = useState(() => createInitialStats());
   const [timeRemainingMs, setTimeRemainingMs] = useState(durationMs);
   const [isFinished, setIsFinished] = useState(false);
   const [acceptingAnswers, setAcceptingAnswers] = useState(true);
@@ -194,6 +197,19 @@ export default function ChallengePage() {
     focusInput();
   }, [challengeCaps, focusInput, resultCap, zeroSafeRange]);
 
+  const restartChallenge = useCallback(() => {
+    setHistory([]);
+    setStats(createInitialStats());
+    setAnswerValue('');
+    setAnswerReveal('');
+    setToast(INTRO_TOAST);
+    setToastTone('');
+    setSparkle(false);
+    setCurrentQuestion(() => generateChallengeQuestion(null, zeroSafeRange, challengeCaps, resultCap));
+    startCountdown();
+    focusInput();
+  }, [challengeCaps, focusInput, resultCap, startCountdown, zeroSafeRange]);
+
   const handleAnswer = useCallback(
     () => {
       if (!acceptingRef.current || finishedRef.current) return;
@@ -279,10 +295,12 @@ export default function ChallengePage() {
             <div className="sub">Enchaîne les calculs pendant {durationSec}s.</div>
             <div className="challenge-status">
               <div className="badge session-counter">{timerLabel}</div>
-              <div className="challenge-metrics">
-                <div className="badge">{scoreLabel}</div>
-                <div className="badge">{streakLabel}</div>
-              </div>
+              {isFinished && (
+                <div className="challenge-metrics">
+                  <div className="badge">{scoreLabel}</div>
+                  <div className="badge">{streakLabel}</div>
+                </div>
+              )}
             </div>
             <div className="question-line">
               <div className="math">{`${currentQuestion.a} ${opSymbol(currentQuestion.op)} ${currentQuestion.b}`}</div>
@@ -379,6 +397,11 @@ export default function ChallengePage() {
                       <div className="v">= {entry.answer}</div>
                     </div>
                   ))}
+                </div>
+                <div className="btn-row">
+                  <button type="button" className="btn btn-primary" onClick={restartChallenge}>
+                    Recommencer le challenge
+                  </button>
                 </div>
               </>
             )}

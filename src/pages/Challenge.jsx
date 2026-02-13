@@ -363,7 +363,9 @@ export default function ChallengePage() {
                 </div>
               </div>
             </form>
-            <div className="sub">Historique récent</div>
+            {isFinished && (
+              <>
+                <div className="sub">Historique récent</div>
                 <div className="challenge-history-list">
                   {history.map((entry, idx) => (
                     <div
@@ -376,6 +378,8 @@ export default function ChallengePage() {
                     </div>
                   ))}
                 </div>
+              </>
+            )}
 
               </div>
             </div>

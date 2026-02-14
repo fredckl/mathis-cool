@@ -116,6 +116,14 @@ export default function SettingsPage() {
     navigate('/');
   }, [navigate, setState]);
 
+  const handleClearCaches = useCallback(() => {
+    const infoMessage =
+      'Vider les caches supprime les fichiers hors ligne, les données locales du service worker et déconnecte les sessions. Cette action peut effacer la progression non synchronisée.';
+    const confirmed = window.confirm(`${infoMessage}\n\nConfirmer la suppression des caches ?`);
+    if (!confirmed) return;
+    clearUserCacheAndReload();
+  }, []);
+
   const handleExport = useCallback(() => {
     try {
       exportLocalStorage();
@@ -283,9 +291,6 @@ export default function SettingsPage() {
               <button type="button" className="btn btn-primary" onClick={handleSave}>
                 Enregistrer
               </button>
-              <button type="button" className="btn btn-secondary" onClick={clearUserCacheAndReload}>
-                Vider le cache
-              </button>
               <button type="button" className="btn btn-danger" onClick={handleReset}>
                 Réinitialiser
               </button>
@@ -311,6 +316,18 @@ export default function SettingsPage() {
               />
             </div>
           </div>
+        </div>
+      </div>
+
+      <div className="card danger-zone">
+        <div className="card-inner danger-zone-content">
+          <div className="h2">Vider les caches</div>
+          <div className="alert alert-warning">
+            <strong>Attention :</strong> cette opération efface les données hors ligne, peut supprimer les scores non sauvegardés et relancera complètement l'application.
+          </div>
+          <button type="button" className="btn btn-secondary btn-full" onClick={handleClearCaches}>
+            Vider les caches
+          </button>
         </div>
       </div>
     </Layout>

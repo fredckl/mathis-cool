@@ -88,10 +88,22 @@ a {
 }
 
 .fx-firework {
-  background: radial-gradient(circle at 20% 20%, rgba(244, 114, 182, 0.35), transparent 45%),
-    radial-gradient(circle at 70% 30%, rgba(96, 165, 250, 0.35), transparent 45%),
+  background: radial-gradient(
+      circle at 20% 20%,
+      rgba(244, 114, 182, 0.35),
+      transparent 45%
+    ),
+    radial-gradient(
+      circle at 70% 30%,
+      rgba(96, 165, 250, 0.35),
+      transparent 45%
+    ),
     radial-gradient(circle at 40% 70%, rgba(34, 197, 94, 0.3), transparent 40%),
-    radial-gradient(circle at 80% 80%, rgba(250, 204, 21, 0.25), transparent 45%);
+    radial-gradient(
+      circle at 80% 80%,
+      rgba(250, 204, 21, 0.25),
+      transparent 45%
+    );
   mix-blend-mode: screen;
   transform: scale(1);
 }
@@ -402,7 +414,11 @@ a {
 
 .danger-zone {
   border: 1px solid rgba(251, 113, 133, 0.35);
-  background: linear-gradient(180deg, rgba(251, 113, 133, 0.18), rgba(251, 113, 133, 0.07));
+  background: linear-gradient(
+    180deg,
+    rgba(251, 113, 133, 0.18),
+    rgba(251, 113, 133, 0.07)
+  );
 }
 
 .danger-zone-content {
@@ -853,5 +869,113 @@ canvas {
 @media (max-width: 760px) {
   .keypad-grid .keypad-btn {
     display: block;
+  }
+}
+
+.celebration-overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(10, 8, 24, 0.8);
+  backdrop-filter: blur(8px);
+  z-index: 50;
+  animation: celebration-fade-in 200ms ease;
+}
+
+.celebration-card {
+  width: min(500px, 90%);
+  padding: 28px;
+  border-radius: 28px;
+  background: radial-gradient(
+    circle at top,
+    rgba(255, 255, 255, 0.15),
+    rgba(7, 5, 20, 0.9)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.45);
+  text-align: center;
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.celebration-title {
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 1000;
+  margin-bottom: 8px;
+}
+
+.celebration-sub {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 700;
+}
+
+.celebration-score {
+  margin: 18px 0 10px;
+  font-size: 48px;
+  font-weight: 1000;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.celebration-meter {
+  width: 100%;
+  height: 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.celebration-meter-fill {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e, #fde047, #f97316);
+  transform-origin: left center;
+  transition: transform 220ms ease;
+}
+
+.celebration-bubbles {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  font-size: 32px;
+  margin-bottom: 16px;
+}
+
+.celebration-bubble {
+  animation: celebration-pop 1.4s ease-out infinite;
+}
+
+.celebration-tip {
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+@keyframes celebration-pop {
+  0% {
+    transform: translateY(12px) scale(0.8);
+    opacity: 0;
+  }
+  30% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-12px) scale(0.9);
+    opacity: 0;
+  }
+}
+
+@keyframes celebration-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }

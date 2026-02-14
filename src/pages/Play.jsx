@@ -22,6 +22,56 @@ import {
 import { clamp, now } from '../lib/math.js';
 
 const SESSION_TOTAL = 10;
+const CELEBRATION_DURATION_MS = 5000;
+
+function CelebrationShow({ data, visible }) {
+  if (!visible || !data) return null;
+  const ratio = data.total > 0 ? data.correct / data.total : 0;
+  let title = 'Club des mathlètes !';
+  let sub = "Tu viens de faire rigoler les chiffres.";
+  let emojiSet = ['🤓', '🎉', '🤣'];
+  if (ratio >= 0.9) {
+    title = 'Explosion de neurones !';
+    sub = 'Les nombres te réclament un autographe.';
+    emojiSet = ['🧠', '🚀', '💃', '🥳'];
+  } else if (ratio >= 0.7) {
+    title = 'Rire garanti !';
+    sub = 'Les chiffres te regardent avec respect (et un peu de peur).';
+    emojiSet = ['😂', '🤸‍♂️', '🪩'];
+  } else if (ratio >= 0.5) {
+    title = 'Showtime !';
+    sub = 'Tes réponses déclenchent une ola numérique.';
+    emojiSet = ['🤖', '🙌', '🎈'];
+  }
+
+  return (
+    <div className="celebration-overlay" role="status" aria-live="polite">
+      <div className="celebration-card">
+        <div className="celebration-title">{title}</div>
+        <p className="celebration-sub">{sub}</p>
+        <div className="celebration-score">
+          <span>{data.correct}</span>
+          <span>/</span>
+          <span>{data.total}</span>
+        </div>
+        <div className="celebration-meter">
+          <div
+            className="celebration-meter-fill"
+            style={{ transform: `scaleX(${Math.min(1, ratio)})` }}
+          />
+        </div>
+        <div className="celebration-bubbles">
+          {emojiSet.map((emoji, index) => (
+            <span key={`${emoji}-${index}`} className="celebration-bubble" style={{ animationDelay: `${index * 0.35}s` }}>
+              {emoji}
+            </span>
+          ))}
+        </div>
+        <div className="celebration-tip">Prochaine mission dans 5 secondes… reste dans la danse !</div>
+      </div>
+    </div>
+  );
+}
 
 function questionKey(question) {
   if (!question) return '';
@@ -60,6 +110,8 @@ export default function PlayPage() {
   const [answerReveal, setAnswerReveal] = useState('');
   const [sparkle, setSparkle] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [celebrationData, setCelebrationData] = useState(null);
 
   const timeLimitMs = useMemo(
     () => calcTimeLimitMs(state),
@@ -81,6 +133,11 @@ export default function PlayPage() {
   const timeoutsRef = useRef(new Set());
   const progressFillRef = useRef(null);
   const timeLimitRef = useRef(timeLimitMs);
+  const sessionStatsRef = useRef({ played: 0, correct: 0 });
+
+  const resetSessionStats = useCallback(() => {
+    sessionStatsRef.current = { played: 0, correct: 0 };
+  }, []);
 
   const updateProgressFill = useCallback((ratio) => {
     const el = progressFillRef.current;
@@ -187,6 +244,11 @@ export default function PlayPage() {
         return next;
       });
 
+      sessionStatsRef.current.played += 1;
+      if (correct) {
+        sessionStatsRef.current.correct += 1;
+      }
+
       const tone = correct ? 'good' : 'bad';
       setToastTone(tone);
       setToast(correct ? pickPositive() : pickEncouraging());
@@ -211,7 +273,13 @@ export default function PlayPage() {
         setSparkle(false);
         setToastTone('good');
         setToast('Bravo ! Partie terminée.');
-        setTrackedTimeout(() => navigate('/progress'), 1200);
+        const statsSnapshot = { ...sessionStatsRef.current };
+        setCelebrationData({ correct: statsSnapshot.correct, total: statsSnapshot.played });
+        setShowCelebration(true);
+        setTrackedTimeout(() => {
+          setShowCelebration(false);
+          navigate('/progress');
+        }, CELEBRATION_DURATION_MS + 200);
         return;
       }
 
@@ -279,6 +347,11 @@ export default function PlayPage() {
     clearTrackedTimeouts();
     stopFx();
   }, [clearTrackedTimeouts, stopTimers]);
+
+  useEffect(() => {
+    resetSessionStats();
+    return () => resetSessionStats();
+  }, [resetSessionStats]);
 
   const handleFormSubmit = useCallback(
     (event) => {
@@ -396,6 +469,7 @@ export default function PlayPage() {
           </div>
         </div>
       </div>
+      <CelebrationShow data={celebrationData} visible={showCelebration} />
     </Layout>
   );
 }

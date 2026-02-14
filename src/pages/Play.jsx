@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom';
 
 import Layout from '../components/Layout.jsx';
+import { CelebrationShow, CELEBRATION_DURATION_MS } from '../components/CelebrationShow.jsx';
 import { useAppState } from '../state/AppContext.jsx';
 import { DEVICE } from '../lib/device.js';
 import { clone } from '../lib/storage.js';
@@ -22,56 +23,6 @@ import {
 import { clamp, now } from '../lib/math.js';
 
 const SESSION_TOTAL = 10;
-const CELEBRATION_DURATION_MS = 5000;
-
-function CelebrationShow({ data, visible }) {
-  if (!visible || !data) return null;
-  const ratio = data.total > 0 ? data.correct / data.total : 0;
-  let title = 'Club des mathlètes !';
-  let sub = "Tu viens de faire rigoler les chiffres.";
-  let emojiSet = ['🤓', '🎉', '🤣'];
-  if (ratio >= 0.9) {
-    title = 'Explosion de neurones !';
-    sub = 'Les nombres te réclament un autographe.';
-    emojiSet = ['🧠', '🚀', '💃', '🥳'];
-  } else if (ratio >= 0.7) {
-    title = 'Rire garanti !';
-    sub = 'Les chiffres te regardent avec respect (et un peu de peur).';
-    emojiSet = ['😂', '🤸‍♂️', '🪩'];
-  } else if (ratio >= 0.5) {
-    title = 'Showtime !';
-    sub = 'Tes réponses déclenchent une ola numérique.';
-    emojiSet = ['🤖', '🙌', '🎈'];
-  }
-
-  return (
-    <div className="celebration-overlay" role="status" aria-live="polite">
-      <div className="celebration-card">
-        <div className="celebration-title">{title}</div>
-        <p className="celebration-sub">{sub}</p>
-        <div className="celebration-score">
-          <span>{data.correct}</span>
-          <span>/</span>
-          <span>{data.total}</span>
-        </div>
-        <div className="celebration-meter">
-          <div
-            className="celebration-meter-fill"
-            style={{ transform: `scaleX(${Math.min(1, ratio)})` }}
-          />
-        </div>
-        <div className="celebration-bubbles">
-          {emojiSet.map((emoji, index) => (
-            <span key={`${emoji}-${index}`} className="celebration-bubble" style={{ animationDelay: `${index * 0.35}s` }}>
-              {emoji}
-            </span>
-          ))}
-        </div>
-        <div className="celebration-tip">Prochaine mission dans 5 secondes… reste dans la danse !</div>
-      </div>
-    </div>
-  );
-}
 
 function questionKey(question) {
   if (!question) return '';

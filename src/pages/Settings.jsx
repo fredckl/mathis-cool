@@ -109,7 +109,9 @@ export default function SettingsPage() {
   );
 
   const handleReset = useCallback(() => {
-    const ok = window.confirm('Réinitialiser supprimera toutes les données locales. Continuer ?');
+    const message =
+      'Vos réglages et préférences vont revenir aux valeurs par défaut et toutes les données locales seront supprimées. Souhaitez-vous vraiment continuer ?';
+    const ok = window.confirm(message);
     if (!ok) return;
     window.localStorage.removeItem(STORAGE_KEY);
     setState(() => clone(DEFAULT_STATE));

@@ -329,7 +329,9 @@ export default function SettingsPage() {
         <div className="card-inner danger-zone-content">
           <div className="h2">Vider les caches</div>
           <div className="alert alert-warning">
-            <strong>Attention :</strong> cette opération efface les données hors ligne, peut supprimer les scores non sauvegardés et relancera complètement l'application.
+            <strong>Attention :</strong> cette opération efface les données hors ligne, supprime les scores et relancera complètement l'application.
+            <br />
+            Avant d'effectuer cette action, assurez-vous d'exporter vos données afin de pouvoir les importer par la suite.
           </div>
           <button type="button" className="btn btn-secondary btn-full" onClick={handleClearCaches}>
             Vider les caches

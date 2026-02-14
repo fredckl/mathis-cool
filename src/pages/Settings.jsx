@@ -18,6 +18,7 @@ import { computeAccuracy, formatMs } from '../lib/gameLogic.js';
 const MAX_TIME_MS = 120_000;
 const MAX_MIN_TIME_MS = 60_000;
 const MAX_CAP = 999;
+const SAVE_CONFIRMATION_MESSAGE = 'Réglages enregistrés !';
 
 function buildForm(config = DEFAULT_CONFIG) {
   return {
@@ -101,9 +102,12 @@ export default function SettingsPage() {
             CHALLENGE_SETTINGS.maxDurationSec
           );
         }
-        setFeedback('Réglages enregistrés !');
         return next;
       });
+      setFeedback(SAVE_CONFIRMATION_MESSAGE);
+      if (typeof window !== 'undefined') {
+        window.alert(SAVE_CONFIRMATION_MESSAGE);
+      }
     },
     [form, parseFloatSafe, setState]
   );

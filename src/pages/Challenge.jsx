@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom';
 
 import Layout from '../components/Layout.jsx';
+import { CelebrationShow, CELEBRATION_DURATION_MS } from '../components/CelebrationShow.jsx';
 import { useAppState } from '../state/AppContext.jsx';
 import { DEVICE } from '../lib/device.js';
 import { now } from '../lib/math.js';
@@ -63,6 +64,8 @@ export default function ChallengePage() {
   const [isFinished, setIsFinished] = useState(false);
   const [acceptingAnswers, setAcceptingAnswers] = useState(true);
   const [sparkle, setSparkle] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [celebrationData, setCelebrationData] = useState(null);
 
   const inputRef = useRef(null);
   const timerRafRef = useRef(null);
@@ -73,6 +76,15 @@ export default function ChallengePage() {
   const statsRef = useRef(stats);
   const progressFillRef = useRef(null);
   const lastDisplayedSecondsRef = useRef(Math.ceil(durationMs / 1000));
+  const celebrationTimeoutRef = useRef(null);
+
+  const hideCelebration = useCallback(() => {
+    if (celebrationTimeoutRef.current) {
+      window.clearTimeout(celebrationTimeoutRef.current);
+      celebrationTimeoutRef.current = null;
+    }
+    setShowCelebration(false);
+  }, []);
 
   const updateProgressFill = useCallback((ratio) => {
     const el = progressFillRef.current;
@@ -116,6 +128,16 @@ export default function ChallengePage() {
     updateProgressFill(0);
     setToast(`Terminé ! ${statsRef.current.correct} bonnes réponses sur ${statsRef.current.answered}.`);
     setToastTone('good');
+    const snapshot = { correct: statsRef.current.correct, total: statsRef.current.answered };
+    setCelebrationData(snapshot);
+    setShowCelebration(true);
+    if (celebrationTimeoutRef.current) {
+      window.clearTimeout(celebrationTimeoutRef.current);
+    }
+    celebrationTimeoutRef.current = window.setTimeout(() => {
+      setShowCelebration(false);
+      celebrationTimeoutRef.current = null;
+    }, CELEBRATION_DURATION_MS);
   }, [stopCountdown, updateProgressFill]);
 
   const startCountdown = useCallback(() => {
@@ -155,8 +177,9 @@ export default function ChallengePage() {
     return () => {
       stopCountdown();
       stopFx();
+      hideCelebration();
     };
-  }, [focusInput, startCountdown, stopCountdown]);
+  }, [focusInput, hideCelebration, startCountdown, stopCountdown]);
 
   useEffect(() => {
     if (typeof document === 'undefined') {
@@ -205,6 +228,7 @@ export default function ChallengePage() {
     setToast(INTRO_TOAST);
     setToastTone('');
     setSparkle(false);
+    setShowCelebration(false);
     setCurrentQuestion(() => generateChallengeQuestion(null, zeroSafeRange, challengeCaps, resultCap));
     startCountdown();
     focusInput();
@@ -266,8 +290,9 @@ export default function ChallengePage() {
   const handleQuit = useCallback(() => {
     stopCountdown();
     stopFx();
+    hideCelebration();
     navigate('/');
-  }, [navigate, stopCountdown]);
+  }, [hideCelebration, navigate, stopCountdown]);
 
   const timerSeconds = Math.max(0, Math.ceil(timeRemainingMs / 1000));
   const timerLabel = isFinished ? 'Temps écoulé !' : `Temps restant : ${timerSeconds}s`;
@@ -421,6 +446,7 @@ export default function ChallengePage() {
           </div>
         </div>
       </div>
+      <CelebrationShow data={celebrationData} visible={showCelebration} flavor="challenge" />
     </Layout>
   );
 }
